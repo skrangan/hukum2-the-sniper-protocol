@@ -1,0 +1,317 @@
+﻿HUKUM 2: The Sniper Protocol
+Product Requirements Document (PRD) & Technical Specification
+Document Overview
+Metadata Property
+	Details
+	Target Build System
+	Antigravity AI / Web Game Engine
+	Genre
+	2D Top-Down / Isometric Tactical Action-Puzzle & Explosive Set-Piece Comedy
+	Platform
+	Web Browser (Desktop & Mobile Responsive HTML5 Canvas)
+	Primary Language
+	Tanglish (Romanized Tamil + English) with real-time English subtitles
+	1. Alternative Game Titles
+While Bailer-2 is a direct parody pun, a title that blends global action-comedy appeal with the iconic Jailer pop-culture phenomenon will resonate strongly with both Tamil and non-Tamil players:
+
+
+* HUKUM 2: The Sniper Protocol (Recommended Primary Title — "Hukum" is globally viral after the first movie, and "The Sniper Protocol" sounds like a high-stakes espionage thriller while poking fun at the protagonist solving every problem with hidden snipers).
+
+
+2. Game Vision & Core Gameplay Loop
+2.1 Visual Perspective: 2D Top-Down / Isometric Action
+* Camera Angle: 45-degree Isometric projection (orthographic camera) similar to Hotline Miami, Hitman GO, and Monaco: What's Yours Is Mine.
+* Tile Grid & Physics: 64x64 pixel isometric tiles with full 2D rigid-body physics (Matter.js or Arcade Physics) for explosive barrels, flying cars, shattering glass, and ragdoll goon knockbacks.
+2.2 The Dual-Phase Interactive Action Loop
+To make the game heavily interactive with explosive action set pieces, every level is divided into two dynamic phases:
+Phase A: Tactical Setup & Stealth Manipulation (Real-Time Top-Down)
+The player walks around the map as Tiger Muthuvel (who refuses to run—he only power-walks with maximum swagger). Players interact with the environment: rigging propane tanks, bribing NPCs, rotating reflective mirrors for sniper lasers, hacking speakers, and engaging in witty Tanglish dialogue bluffs.
+Phase B: "The Spectacle Flip" — Real-Time Action Set Piece
+Once traps and snipers are aligned, or when an ambush breaks out, the player hits [SPACEBAR] or clicks the "FLIP GLASSES (HUKUM MODE)" button. Time slows down by 50% (Bullet-Time), an Anirudh-style heavy synth-bass beat drops, and the game shifts into a real-time interactive action set piece. Players actively click targets to command rooftop snipers, trigger chain-reaction vehicle crashes, dodge enemy counter-snipers, and summon explosive cameo air-strikes.
+3. Character Design & Sprite Specifications
+All characters must be rendered as stylized 2D Isometric Sprites (64x96 px base resolution) with distinct silhouettes, expressive idle animations, and high-contrast color palettes.
+3.1 Key Roster Overview
+Character
+	Role / Archetype
+	Visual Design
+	Core Mechanic / Animation
+	"Tiger" Muthuvel Pandian
+	Protagonist
+	Silver beard, side-swept hair, aviator specs. White linen / dark olive jacket.
+	action_spec_flip: 12-frame 360° glasses flip; triggers bullet-time & bass drop.
+	Vimal
+	Getaway Driver
+	Curly hair, floral Goan shirt. Drives yellow-black Tourist Taxi.
+	ability_taxi_drift: 360° drift creating dynamic cover and wiping out goons.
+	Moorthy Sir
+	Clueless Pawn
+	Heavy-set politician, starch-white silk shirt, oversized dark sunglasses.
+	Decoy Magnet: Goons target him first, granting Tiger time to set traps.
+	Dileep
+	Investigator (Mid-Boss)
+	Checkered shirt, khaki trousers, magnifying ledger, heavy revolver.
+	Tracker: Follows grid footprints; disarms un-monitored traps.
+	Kantha Kalpak
+	Psychological Boss
+	Emerald saree, ornate jewelry, holds tea & coffee tray.
+	Suspicion Meter: Rises if movement in line-of-sight is too aggressive.
+	Bodhi Kalpak
+	Main Antagonist
+	Neon blazer, eccentric hair, golden megaphone, laser designator.
+	Counter-Snipers: Commands green-laser rooftop snipers; moves frantically.
+	Chakri Kalpak
+	Syndicate Patriarch
+	White hair, black suit, cigar, protected by armored turret limo.
+	Boss Armor: Requires multi-stage environmental traps to strip defenses.
+	3.2 The Cameo Syndicate (Screen-Clearing Summons)
+* Mathew (Mohanlal style): Vintage brown suit, cigar, arrives in a classic vintage Mercedes that bulldozes barricades.
+* Narasimha (Shiva Rajkumar style): All-black outfit, intense eyes, walks through walls/doors destroying heavy armor squads in melee range.
+* Roddy (Air-Support Cameo): Tactical vest, sunglasses, rappels from a helicopter firing twin SMGs during Level 9.
+4. Language & Dual-Subtitle System Specification
+To make the game hilarious for Tamil speakers while 100% accessible to global non-Tamil players, all dialogue, UI prompts, and audio callouts must use the Dual-Line Tanglish Subtitle Engine:
+
+
+* Primary Line (Top - Bold Yellow #FACC15): Tanglish / Romanized Tamil punchline.
+* Secondary Line (Bottom - Crisp Cyan/White #E2E8F0): Witty English localization capturing sarcasm and cultural subtext.
+
+
+{
+
+
+  "dialogue_id": "lvl3_tea_stall_01",
+
+
+  "speaker": "TIGER",
+
+
+  "portrait_state": "smirk_glasses",
+
+
+  "tanglish_text": "Thambi... Tea innum varala, aana unga aalunga ellam kilambittanga.",
+
+
+  "english_subtitle": "Bro... My tea hasn't even arrived yet, and your boys have already left the planet.",
+
+
+  "voice_sfx": "sfx_rajini_chuckle_01.mp3",
+
+
+  "trigger_event": "SNIPER_VOLLEY_TEA_STALL"
+
+
+}
+5. Chapter Campaign & Level Design
+Level 1: "Amaithiya Irukkurathu Bayam Illa, Athu En Style"
+* English Subtitle: "Being quiet isn't fear, it's just my style."
+* Setting: Isometric Neighborhood Market & Rithu's School Street.
+* Motive: Eliminate all 4 bike thugs and wreck their bikes using street hazards without Tiger’s wife (Viji) seeing Tiger use violence.
+* Set Piece: Wait for Viji’s vision cone to turn -> Kick a stray coconut -> hits auto-rickshaw handbrake -> rickshaw rolls down isometric ramp -> smashes thug bikes -> triggers fireworks cart explosion.
+Level 2: "Moorthy Sir Udane Paakkanumam"
+* English Subtitle: "Moorthy Sir demands an audience with you immediately."
+* Setting: Narrow Suspension Bridge over a river blocked by 6 parked SUVs.
+* Motive: Clear all 6 SUVs and launch the lead goon into the river while making Moorthy believe he scared them off.
+* Set Piece: Activate HUKUM MODE. Red sniper lasers appear from distant hills. Shoot tires and fuel caps in chain reaction so shockwaves bounce goons' car keys directly to Vimal.
+Level 3: "Oru Sun, Oru Moon... Puriyutha?"
+* English Subtitle: "There's only one Sun and one Moon... Do you get the hierarchy?"
+* Setting: Dusty Highway Roadside Tea Stall surrounded by sugarcane trucks.
+* Motive: Disarm 12 machete goons in sync with the whistling tea kettle and escape in Vimal's taxi.
+* Set Piece: Boiling Kettle Rhythm Shootout. Tea boiler whistles every 4 seconds. Click enemy weapons when the steam gauge hits red to disarm goons and pin their shirts with sniper fire.
+Level 4: "24 Mani Nerathula... Alapara Kelapparom"
+* English Subtitle: "In 24 hours... we unleash total mayhem."
+* Setting: Kochi Port Container Yard at Night (Rain & Lightning).
+* Motive: Lure Dileep’s armored jeep into an open shipping container, crane-lift it onto a cargo ship bound for Madagascar, and burn evidence files.
+* Set Piece: Hack magnetic cranes in real-time to drop containers behind Dileep’s moving jeep, trapping him, then hoist his jeep into the sky.
+Level 5: "Tea-ya, Coffee-ya? Neenga Decide Panna Mudiyathu"
+* English Subtitle: "Tea or Coffee? You don't even get to decide if you'll survive the sip."
+* Setting: Kantha Kalpak’s Portuguese Mansion in Goa.
+* Motive: Swap poisoned cups with Kantha’s lieutenants, steal the Goa Syndicate ledger, and walk out.
+* Set Piece: Use mini-phone UI to spam Kantha’s phone with family forwards. While she checks her phone, spin the lazy-Susan table 180°, reflect a sniper laser off a teapot to cut a chandelier rope onto guards.
+Level 6: "Jailer Mattum Thaan Sniper Vaippana?"
+* English Subtitle: "Does only the Jailer have a monopoly on snipers?"
+* Setting: Neon-lit Goan Street Carnival with Ferris Wheels and Parades.
+* Motive: Turn Bodhi’s 8 counter-snipers against his own ground troops and blow up Bodhi’s megaphone stage.
+* Set Piece: Move Vimal’s chrome-hooded taxi and rotate parade mirrors in real-time. Reflect Bodhi’s green sniper shots into his own firework trucks.
+Level 7: "Puli Padhungurathu Paayurathukku Thaan"
+* English Subtitle: "The Tiger crouches only to pounce harder."
+* Setting: Fortified Safe House Compound under siege.
+* Motive: Defend the safe house for 3 waves and crush all 3 armored breach vans using the Trio’s combined abilities.
+* Set Piece: Switch dynamically between Tiger (Overwatch), Narasimha (Melee Hurricane—bulldozes brick walls), and Mathew (Drives sedan towing a wrecking ball).
+Level 8: "Naan Paatha Velai Vera... Paakura Velai Vera"
+* English Subtitle: "The job I retired from was brutal... what I'm about to do is worse."
+* Setting: The Kalpak Luxury Casino Cruise Ship ("Bindaas" Party Deck).
+* Motive: Blow open 3 vault doors synced to the DJ’s bass drops and launch cash crates onto Vimal’s speedboat.
+* Set Piece: Bass-Drop Sabotage. Detonating charges, firing zip-lines, and tossing guards on the exact beat multiplies the Aura Combo Score and keeps the crowd cheering.
+Level 9: "50 Varushama Enna Azhikka Paarthanga..."
+* English Subtitle: "For 50 years, legends tried to finish me... none survived."
+* Setting: Goa Private Airstrip Runway at Sunset.
+* Motive: Keep Tiger standing in the center circle without taking a step back while wiping out 40 mercenaries and 4 charging jeeps.
+* Set Piece: 360° Aura Overwatch. Trigger turbine blasts, luggage-cart catapults, tarmac traps, and call in Roddy’s Helicopter Strafe Run for the final wave.
+Level 10: "Hukum... Tiger Ka Hukum!"
+* English Subtitle: "The Verdict... Is Tiger's Alone!"
+* Setting: The Kalpak Fortress Penthouse & Helipad.
+* Motive: Defeat all three Kalpak bosses in a 3-stage interactive showdown and lock them inside Vimal’s "Prison Van" taxi.
+* Set Piece:
+   * Stage 1 (Kantha): Deflect guard lasers using shattered glass pillars.
+   * Stage 2 (Bodhi): Hijack his megaphone drone to drop crates on his sniper nest.
+   * Stage 3 (Chakri): Execute QTE Spectacle Flip (H-U-K-U-M sequence) to chain 10 simultaneous sniper shots, severing the helicopter tether and dropping a steel cage over the villains.
+6. Technical Architecture & Database Specification
+6.1 Frontend & Game Engine Stack
+* Framework: Vite + React 18 (TypeScript) for UI/HUD, Auth screens, Leaderboards, and Cutscene overlays.
+* 2D Isometric Engine: Phaser 3 (v3.80+) with Isometric Plugin / Tiled Map JSON support and Matter.js physics.
+* Styling: Tailwind CSS for glassmorphic HUD, dialogue panels, and dual-subtitle banners.
+* Audio Engine: Howler.js for low-latency multi-track audio (synth beats + sniper SFX + Tanglish voice quips).
+* Web Hosting: Netlify or Vercel (Global CDN edge hosting).
+6.2 Database Schema (Supabase / PostgreSQL)
+l
+-- Profiles table linked to Google OAuth
+CREATE TABLE public.profiles (
+id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+email TEXT UNIQUE NOT NULL,
+display_name TEXT NOT NULL,
+avatar_url TEXT,
+preferred_subtitle_mode TEXT DEFAULT 'tanglish_with_english',
+total_aura_score BIGINT DEFAULT 0,
+highest_level_unlocked INT DEFAULT 1 CHECK (highest_level_unlocked BETWEEN 1 AND 10),
+created_at TIMESTAMPTZ DEFAULT NOW(),
+last_login_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+
+-- Per-level user progress
+CREATE TABLE public.level_progress (
+id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+level_number INT NOT NULL CHECK (level_number BETWEEN 1 AND 10),
+status TEXT DEFAULT 'unlocked',
+best_aura_score INT DEFAULT 0,
+stars_earned INT DEFAULT 0 CHECK (stars_earned BETWEEN 0 AND 3),
+fastest_clear_time_ms INT,
+spectacle_flips_used INT DEFAULT 0,
+cameos_used JSONB DEFAULT '[]'::jsonb,
+updated_at TIMESTAMPTZ DEFAULT NOW(),
+UNIQUE(user_id, level_number)
+);
+
+
+-- Cameo and cosmetics unlock tracking
+CREATE TABLE public.player_unlocks (
+user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE PRIMARY KEY,
+unlocked_cameos JSONB DEFAULT '["vimal_taxi"]'::jsonb,
+unlocked_outfits JSONB DEFAULT '["driver_veshti"]'::jsonb,
+achievements JSONB DEFAULT '[]'::jsonb,
+updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+
+# 7. Interactive UI & HUD Specification
+
+
+* **Top-Left HUD — Aura Meter:** Displays Tiger's Composure Meter (replaces standard health bar), Google profile avatar, display name, and active multiplier (`x2`, `x4`, `HUKUM x10`).
+
+
+* **Bottom-Center HUD — Subtitle Panel:** Semi-transparent dark glass panel (`rgba(15, 23, 42, 0.88)`) with character portrait, bold yellow Tanglish dialogue, and crisp white English translation.
+
+
+* **Bottom-Right HUD — Action Deck:** Pulsing gold **"FLIP SPECS [SPACE]"** trigger alongside tactical hotkeys (`[1]` Sniper Ping, `[2]` Taxi Drift / WhatsApp Spam, `[3]` Cameo Summon).
+
+
+# 8. Implementation Directory Structure
+
+
+```text
+
+
+hukum2-game/
+
+
+├── public/
+
+
+│   ├── assets/
+
+
+│   │   ├── sprites/          # Isometric sprite sheets (tiger.png, vimal_taxi.png, goons.png)
+
+
+│   │   ├── tilemaps/         # Tiled isometric JSON maps (level1_market.json ... level10_penthouse.json)
+
+
+│   │   └── audio/            # Synth BGM loops, sniper SFX, spectacle flip bass drop
+
+
+├── src/
+
+
+│   ├── auth/
+
+
+│   │   └── supabaseClient.ts # Google OAuth sign-in & cloud save sync functions
+
+
+│   ├── data/
+
+
+│   │   ├── dialogues.json    # All Tanglish + English subtitle strings per level
+
+
+│   │   └── levelsConfig.ts   # Objectives, motives, enemy spawn coordinates for Levels 1-10
+
+
+│   ├── game/
+
+
+│   │   ├── PhaserGame.ts     # Phaser 3 Isometric Canvas configuration
+
+
+│   │   ├── scenes/
+
+
+│   │   │   ├── BootScene.ts
+
+
+│   │   │   ├── IsometricLevelScene.ts
+
+
+│   │   │   └── HukumActionPhase.ts
+
+
+│   │   └── entities/
+
+
+│   │       ├── TigerPlayer.ts
+
+
+│   │       ├── SniperLaserSystem.ts
+
+
+│   │       └── EnemyAI.ts
+
+
+│   ├── components/
+
+
+│   │   ├── NavbarAuth.tsx    # Google Sign-In button & Player Profile badge
+
+
+│   │   ├── DualSubtitleHUD.tsx # Tanglish + English interactive dialogue overlay
+
+
+│   │   ├── ActionDeckHUD.tsx # Spectacle Flip button & Cameo triggers
+
+
+│   │   └── LeaderboardModal.tsx
+
+
+│   └── App.tsx
+
+
+├── supabase/
+
+
+│   └── migrations/
+
+
+│       └── 001_init_hukum2_schema.sql
+
+
+└── package.json

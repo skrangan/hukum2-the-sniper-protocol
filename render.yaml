@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: hukum2-game
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hukum2-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false
+
+databases:
+  - name: hukum2-db
+    plan: free
+    region: oregon
+    databaseName: hukum2
+    user: hukum2_user
+    ipAllowList:
+      - cidrBlock: 0.0.0.0/0
+        description: Public external access

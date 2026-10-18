@@ -1,0 +1,51 @@
+{
+  "name": "hukum2-the-sniper-protocol",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n \"API,WEB\" -c \"cyan,magenta\" \"npm run server:dev\" \"npm run client:dev\"",
+    "client:dev": "vite",
+    "client:build": "tsc && vite build",
+    "client:preview": "vite preview",
+    "server:dev": "tsx watch server/src/index.ts",
+    "server:migrate": "tsx server/src/migrate.ts",
+    "server:build": "tsc -p server/tsconfig.json",
+    "start": "NODE_ENV=production tsx server/src/index.ts",
+    "build": "npm run client:build && npm run server:build"
+  },
+  "dependencies": {
+    "@react-oauth/google": "^0.12.1",
+    "canvas-confetti": "^1.9.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "google-auth-library": "^9.15.1",
+    "howler": "^2.2.4",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^1.16.0",
+    "pg": "^8.13.3",
+    "phaser": "^3.88.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/howler": "^2.2.12",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^22.13.9",
+    "@types/pg": "^8.11.11",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "vite": "^5.4.14"
+  }
+}

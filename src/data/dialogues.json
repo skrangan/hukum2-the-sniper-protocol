@@ -1,0 +1,81 @@
+{
+  "dialogues": {
+    "lvl1_intro": {
+      "speaker": "TIGER",
+      "portrait": "tiger_smirk",
+      "tanglish": "Viji pakkathula irukka... Silent-ah mudikanum. Oru chinna thappu kooda nadakka koodathu.",
+      "english": "Viji is right around the corner... Keep it dead silent. Not a single mistake.",
+      "sfx": "muthuvel_whisper"
+    },
+    "lvl1_viji_warning": {
+      "speaker": "VIJI",
+      "portrait": "viji_scowl",
+      "tanglish": "Ennanga! Kaila enna coconut-u? Market-la vambu ethuvum pannalayae?",
+      "english": "Hey! What's that coconut in your hand? You better not be picking street fights!",
+      "sfx": "viji_scold"
+    },
+    "lvl1_rickshaw_ready": {
+      "speaker": "VIMAL",
+      "portrait": "vimal_taxi",
+      "tanglish": "Thalaiva! Auto handbrake loose-ah thaan irukku. Oru thattu thattuna neraya goons flat-u!",
+      "english": "Boss! The rickshaw handbrake is loose. One tap and those bike thugs are wiped out!",
+      "sfx": "vimal_honk"
+    },
+    "lvl1_spec_flip": {
+      "speaker": "TIGER",
+      "portrait": "tiger_glasses_flip",
+      "tanglish": "Amaithiya Irukkurathu Bayam Illa... Athu En Style. HUKUM!",
+      "english": "Staying quiet isn't out of fear... It's just my style. THE VERDICT IS MINE!",
+      "sfx": "hukum_bass_drop"
+    },
+    "lvl1_victory": {
+      "speaker": "TIGER",
+      "portrait": "tiger_coffee",
+      "tanglish": "Viji vandhutta... Coconuts ellam correct bag-la pottachu. Polama?",
+      "english": "Viji's here... All the coconuts are safely in the grocery bag. Shall we head home?",
+      "sfx": "tiger_chuckle"
+    },
+    "lvl2_intro": {
+      "speaker": "MOORTHY",
+      "portrait": "moorthy_clueless",
+      "tanglish": "Tiger! 6 SUV vandhu vazhiya marichu nikkudhu... En power-ah kaattattuma?",
+      "english": "Tiger! 6 SUVs are blocking the bridge... Should I flex my political influence?",
+      "sfx": "moorthy_gasp"
+    },
+    "lvl3_intro": {
+      "speaker": "TIGER",
+      "portrait": "tiger_smirk",
+      "tanglish": "Thambi... Tea innum varala, aana unga aalunga ellam kilambittanga.",
+      "english": "Bro... My tea hasn't even arrived yet, and your boys have already left the planet.",
+      "sfx": "tea_kettle_whistle"
+    },
+    "lvl4_intro": {
+      "speaker": "DILEEP",
+      "portrait": "dileep_angry",
+      "tanglish": "Tiger Muthuvel Pandian! Container yard-la unna thookama naan poga maatten!",
+      "english": "Tiger Muthuvel Pandian! I'm not leaving this port without locking you in a cell!",
+      "sfx": "dileep_shout"
+    },
+    "lvl7_cameo_narasimha": {
+      "speaker": "NARASIMHA",
+      "portrait": "narasimha_rage",
+      "tanglish": "Naan ulla vandhutaen... Yaarukkum ini thappikka vazhi illa!",
+      "english": "I have entered the arena... There is no exit for anyone alive!",
+      "sfx": "narasimha_roar"
+    },
+    "lvl7_cameo_mathew": {
+      "speaker": "MATHEW",
+      "portrait": "mathew_cigar",
+      "tanglish": "Ivide oru Mercedes vandhaal... Barricades ellam thool-aakum.",
+      "english": "When this vintage Mercedes rolls in... barricades turn to dust.",
+      "sfx": "mercedes_engine"
+    },
+    "lvl10_finale": {
+      "speaker": "TIGER",
+      "portrait": "tiger_glasses_flip",
+      "tanglish": "Hukum... Tiger Ka Hukum! 10 Snipers Ready... FIRE!",
+      "english": "The Verdict... Is Tiger's Alone! All 10 Snipers Ready... FIRE!",
+      "sfx": "hukum_ten_snipers"
+    }
+  }
+}
