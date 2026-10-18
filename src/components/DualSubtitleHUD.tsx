@@ -15,25 +15,23 @@ export const DualSubtitleHUD: React.FC<DualSubtitleHUDProps> = ({
   const dialogue = (dialoguesData.dialogues as any)[dialogueKey];
   if (!dialogue) return null;
 
-  // Portrait emoji / symbol
-  const getPortraitIcon = (portrait: string) => {
+  // Portrait image mapping
+  const getPortraitSrc = (portrait: string) => {
     switch (portrait) {
       case 'tiger_smirk':
       case 'tiger_glasses_flip':
       case 'tiger_coffee':
-        return '🕶️';
+        return '/assets/portraits/tiger.jpg';
       case 'viji_scowl':
-        return '👩‍🍳';
+        return '/assets/portraits/viji.jpg';
       case 'vimal_taxi':
-        return '🚕';
-      case 'moorthy_clueless':
-        return '👓';
+        return '/assets/portraits/vimal.jpg';
       case 'narasimha_rage':
-        return '🐅';
+        return '/assets/portraits/narasimha.jpg';
       case 'mathew_cigar':
-        return '🚬';
+        return '/assets/portraits/mathew.jpg';
       default:
-        return '👤';
+        return '/assets/portraits/tiger.jpg';
     }
   };
 
@@ -44,8 +42,12 @@ export const DualSubtitleHUD: React.FC<DualSubtitleHUDProps> = ({
     >
       <div className="bg-slate-900/90 backdrop-blur-md border-2 border-yellow-500/40 rounded-2xl p-4 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-start space-x-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
         {/* Character Portrait Box */}
-        <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br from-slate-800 to-slate-950 border border-yellow-500/30 flex items-center justify-center text-3xl shadow-inner">
-          {getPortraitIcon(dialogue.portrait)}
+        <div className="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 border-yellow-500/50 shadow-md bg-slate-950 flex items-center justify-center">
+          <img
+            src={getPortraitSrc(dialogue.portrait)}
+            alt={dialogue.speaker}
+            className="w-full h-full object-cover object-top"
+          />
         </div>
 
         {/* Dual Subtitles Content */}

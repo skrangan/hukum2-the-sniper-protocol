@@ -7,6 +7,7 @@ interface NavbarAuthProps {
   profile: UserProfile | null;
   onOpenLeaderboard: () => void;
   onOpenLevelSelect: () => void;
+  onOpenIntroVideo: () => void;
   currentLevel: number;
 }
 
@@ -14,6 +15,7 @@ export const NavbarAuth: React.FC<NavbarAuthProps> = ({
   profile,
   onOpenLeaderboard,
   onOpenLevelSelect,
+  onOpenIntroVideo,
   currentLevel
 }) => {
   const [isMuted, setIsMuted] = useState(soundManager.getMuted());
@@ -34,13 +36,20 @@ export const NavbarAuth: React.FC<NavbarAuthProps> = ({
             HUKUM 2: <span className="text-white">THE SNIPER PROTOCOL</span>
           </h1>
           <p className="text-[10px] text-slate-400 uppercase tracking-widest">
-            Tactical Action-Puzzle • Level {currentLevel}
+            3D Tactical Action-Puzzle • Level {currentLevel}
           </p>
         </div>
       </div>
 
       {/* Center Controls */}
       <div className="flex items-center space-x-3">
+        <button
+          onClick={onOpenIntroVideo}
+          className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold bg-red-950/70 hover:bg-red-900/80 border border-red-500/40 text-red-300 rounded-lg transition-all animate-pulse"
+        >
+          <span>🎬 Watch Intro</span>
+        </button>
+
         <button
           onClick={onOpenLevelSelect}
           className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-yellow-300 rounded-lg transition-all"

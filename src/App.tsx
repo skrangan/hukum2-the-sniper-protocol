@@ -7,28 +7,32 @@ import { ActionDeckHUD } from './components/ActionDeckHUD';
 import { VictoryModal } from './components/VictoryModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { LevelSelectModal } from './components/LevelSelectModal';
-import { PhaserGameContainer } from './components/PhaserGameContainer';
+import { IntroVideoModal } from './components/IntroVideoModal';
+import { ThreeGameContainer } from './components/ThreeGameContainer';
+import { ThreeGameManager } from './game/three/ThreeGameManager';
+import { Game3DState } from './game/three/MarketScene3D';
 import { ApiClient, UserProfile, LevelProgress } from './api/client';
-import { GameEventData } from './game/scenes/MarketLevelScene';
 import { LEVELS } from './data/levelsConfig';
 
 export const App: React.FC = () => {
-  const gameRef = useRef<Phaser.Game | null>(null);
+  const threeGameManagerRef = useRef<ThreeGameManager | null>(null);
 
   // User & DB State
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [progress, setProgress] = useState<LevelProgress[]>([]);
   const [currentLevelId, setCurrentLevelId] = useState<number>(1);
 
-  // In-Game Live State
-  const [gameData, setGameData] = useState<GameEventData>({
+  // In-Game 3D Live State
+  const [gameData, setGameData] = useState<Game3DState>({
     aura: 0,
     multiplier: 1,
     composure: 100,
     vijiSuspicion: 0,
     hukumMode: false,
     phase: 'STEALTH',
-    activeDialogueKey: 'lvl1_intro'
+    coconutKicked: false,
+    rickshawRolling: false,
+    fireworksExploded: false
   });
 
   const [activeDialogue, setActiveDialogue] = useState<string | null>('lvl1_intro');
@@ -37,6 +41,7 @@ export const App: React.FC = () => {
   const [dbSaved, setDbSaved] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showLevelSelect, setShowLevelSelect] = useState(false);
+  const [showIntroVideo, setShowIntroVideo] = useState(true); // Open intro on initial load
 
   const currentLevelConfig = LEVELS.find(l => l.id === currentLevelId) || LEVELS[0];
 
@@ -70,22 +75,14 @@ export const App: React.FC = () => {
 
   // Handle Spectacle Flip Trigger from ActionDeck or Spacebar
   const handleFlipSpecs = () => {
-    if (!gameRef.current) return;
-    const scene = gameRef.current.scene.getScene('MarketLevelScene') as any;
-    if (scene && scene.triggerSpectacleFlip) {
-      scene.triggerSpectacleFlip();
+    if (threeGameManagerRef.current) {
+      threeGameManagerRef.current.triggerSpectacleFlip();
     }
   };
 
-  const handleSniperPing = () => {
-    handleFlipSpecs();
-  };
-
   const handleTaxiDrift = () => {
-    if (!gameRef.current) return;
-    const scene = gameRef.current.scene.getScene('MarketLevelScene') as any;
-    if (scene && scene.kickCoconut) {
-      scene.kickCoconut();
+    if (threeGameManagerRef.current) {
+      threeGameManagerRef.current.kickCoconut();
     }
   };
 
@@ -97,8 +94,8 @@ export const App: React.FC = () => {
 
     // Dazzling Victory Confetti
     confetti({
-      particleCount: 100,
-      spread: 80,
+      particleCount: 120,
+      spread: 90,
       origin: { y: 0.6 },
       colors: ['#facc15', '#ef4444', '#38bdf8', '#ffffff']
     });
@@ -127,10 +124,8 @@ export const App: React.FC = () => {
 
   const handleRetry = () => {
     setShowVictory(false);
-    if (!gameRef.current) return;
-    const scene = gameRef.current.scene.getScene('MarketLevelScene') as any;
-    if (scene && scene.retryLevel) {
-      scene.retryLevel();
+    if (threeGameManagerRef.current) {
+      threeGameManagerRef.current.retry();
     }
   };
 
@@ -146,22 +141,30 @@ export const App: React.FC = () => {
         profile={profile}
         onOpenLeaderboard={() => setShowLeaderboard(true)}
         onOpenLevelSelect={() => setShowLevelSelect(true)}
+        onOpenIntroVideo={() => setShowIntroVideo(true)}
         currentLevel={currentLevelId}
       />
 
-      {/* Main Isometric Phaser 3 Game Arena */}
-      <main className="flex-1 relative flex items-center justify-center p-2 pt-14 pb-2">
-        <PhaserGameContainer
-          gameRef={gameRef}
+      {/* Main 3D WebGL Three.js Game Arena */}
+      <main className="flex-1 relative flex items-center justify-center p-0 pt-14 pb-0">
+        <ThreeGameContainer
+          gameManagerRef={threeGameManagerRef}
           onStateUpdate={(data) => setGameData(data)}
           onDialogue={(key) => setActiveDialogue(key)}
           onVictory={handleLevelCompleted}
-          onBusted={() => setActiveDialogue('lvl1_viji_warning')}
         />
 
         {/* Top-Left Aura Meter & Motive HUD */}
         <AuraMeterHUD
-          gameData={gameData}
+          gameData={{
+            aura: gameData.aura,
+            multiplier: gameData.multiplier,
+            composure: gameData.composure,
+            vijiSuspicion: Math.round(gameData.vijiSuspicion),
+            hukumMode: gameData.hukumMode,
+            phase: gameData.phase,
+            activeDialogueKey: null
+          }}
           levelTitle={currentLevelConfig.titleTanglish}
           objective={currentLevelConfig.motive}
         />
@@ -176,10 +179,17 @@ export const App: React.FC = () => {
         <ActionDeckHUD
           onFlipSpecs={handleFlipSpecs}
           isHukumMode={gameData.hukumMode}
-          onSniperPing={handleSniperPing}
+          onSniperPing={handleFlipSpecs}
           onTaxiDrift={handleTaxiDrift}
         />
       </main>
+
+      {/* Introduction Video Cutscene Modal */}
+      <IntroVideoModal
+        isOpen={showIntroVideo}
+        onClose={() => setShowIntroVideo(false)}
+        onStartGame={() => setShowIntroVideo(false)}
+      />
 
       {/* Modals */}
       {showVictory && victoryDetails && (
