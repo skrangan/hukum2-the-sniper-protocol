@@ -63,7 +63,17 @@ export class MarketScene3D {
     fireworksExploded: false
   };
 
-  private currentLevelId: number = 1;
+  public currentLevelId: number = 1;
+  public chapterGroup: THREE.Group = new THREE.Group();
+  public vimalGroup: THREE.Group | null = null;
+  public vimalTaxiGroup: THREE.Group | null = null;
+  public moorthyGroup: THREE.Group | null = null;
+  public moorthyCarGroup: THREE.Group | null = null;
+  public suvs: THREE.Group[] = [];
+  public carKeyMesh: THREE.Mesh | null = null;
+  public isSpecsWorn: boolean = true;
+  private isExecutingShakeSequence: boolean = false;
+
   private startTime: number = 0;
   private walkTime: number = 0;
   private idleTime: number = 0;
@@ -108,6 +118,7 @@ export class MarketScene3D {
     this.generateRealisticTextures();
     this.initLights();
     this.scene.add(this.environmentGroup);
+    this.scene.add(this.chapterGroup);
     this.buildRichMarketEnvironment();
     this.buildTigerCharacter();
     this.buildVijiCharacter();
@@ -1543,6 +1554,973 @@ export class MarketScene3D {
     });
   }
 
+  // --- Entity Builders: Vimal, Taxi, Moorthy Sir, SUVs, and Thugs ---
+
+  private createVimalTaxiDriver(x: number, y: number, z: number) {
+    this.vimalGroup = new THREE.Group();
+
+    // 1. Vibrant Yellow Hawaiian Floral Vacation Shirt
+    const shirtMat = new THREE.MeshStandardMaterial({
+      color: 0xfacc15,
+      roughness: 0.55,
+      metalness: 0.1
+    });
+    const chest = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.95, 0.42), shirtMat);
+    chest.position.y = 1.35;
+    chest.castShadow = true;
+    this.vimalGroup.add(chest);
+
+    // Floral Accents on Shirt
+    const floralMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    const greenFloralMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+    [-0.2, 0.2].forEach((fx) => {
+      [1.18, 1.45].forEach((fy) => {
+        const dot1 = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 6), floralMat);
+        dot1.position.set(fx, fy, 0.22);
+        const dot2 = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6), greenFloralMat);
+        dot2.position.set(fx + 0.05, fy - 0.04, 0.22);
+        this.vimalGroup!.add(dot1, dot2);
+      });
+    });
+
+    // 2. Head with Comic Expressions
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.7 });
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), skinMat);
+    head.position.y = 2.08;
+    head.castShadow = true;
+    this.vimalGroup.add(head);
+
+    // 3. Voluminous Messy Afro Curls
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.9 });
+    const afro = new THREE.Mesh(new THREE.SphereGeometry(0.33, 14, 14), hairMat);
+    afro.position.set(0, 2.22, -0.04);
+    this.vimalGroup.add(afro);
+
+    [-0.15, 0.15, 0].forEach((hx) => {
+      const curl = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), hairMat);
+      curl.position.set(hx, 2.32, 0.04);
+      this.vimalGroup!.add(curl);
+    });
+
+    // Mustache
+    const mustache = new THREE.Mesh(
+      new THREE.BoxGeometry(0.22, 0.06, 0.08),
+      new THREE.MeshStandardMaterial({ color: 0x18181b })
+    );
+    mustache.position.set(0, 2.0, 0.26);
+    this.vimalGroup.add(mustache);
+
+    // Wide Alarmed Comic Eyes
+    const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const eyeBlackMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    [-0.09, 0.09].forEach((ex) => {
+      const eyeW = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), eyeWhiteMat);
+      eyeW.position.set(ex, 2.14, 0.24);
+      const eyeB = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), eyeBlackMat);
+      eyeB.position.set(ex, 2.14, 0.28);
+      this.vimalGroup!.add(eyeW, eyeB);
+    });
+
+    // 4. Denim Jeans & Sneakers
+    const jeansMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.85 });
+    const legs = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.8, 0.38), jeansMat);
+    legs.position.y = 0.52;
+    legs.castShadow = true;
+    this.vimalGroup.add(legs);
+
+    const shoeMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 });
+    [-0.18, 0.18].forEach((sx) => {
+      const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.45), shoeMat);
+      shoe.position.set(sx, 0.07, 0.05);
+      this.vimalGroup!.add(shoe);
+    });
+
+    // 5. Panicked Nervous Posture Arms
+    const armMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.75 });
+    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18), armMat);
+    armL.position.set(-0.48, 1.35, 0.1);
+    armL.rotation.z = 0.3;
+    this.vimalGroup.add(armL);
+
+    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18), armMat);
+    armR.position.set(0.48, 1.35, 0.1);
+    armR.rotation.z = -0.3;
+    this.vimalGroup.add(armR);
+
+    this.vimalGroup.position.set(x, y, z);
+    this.vimalGroup.rotation.y = Math.PI / 2; // Facing the 6 SUVs
+    this.chapterGroup.add(this.vimalGroup);
+  }
+
+  private createVimalTaxi(x: number, y: number, z: number) {
+    this.vimalTaxiGroup = new THREE.Group();
+
+    const blackMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4, metalness: 0.3 });
+    const yellowMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3, metalness: 0.2 });
+
+    const lower = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.7, 1.8), blackMat);
+    lower.position.y = 0.6;
+    lower.castShadow = true;
+    this.vimalTaxiGroup.add(lower);
+
+    const upper = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.8, 1.65), yellowMat);
+    upper.position.set(-0.1, 1.25, 0);
+    upper.castShadow = true;
+    this.vimalTaxiGroup.add(upper);
+
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.95, roughness: 0.1 });
+    const grill = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.35, 1.1), chromeMat);
+    grill.position.set(2.02, 0.65, 0);
+    this.vimalTaxiGroup.add(grill);
+
+    const hlMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+    [-0.55, 0.55].forEach((hz) => {
+      const hl = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 12), hlMat);
+      hl.position.set(2.04, 0.7, hz);
+      this.vimalTaxiGroup!.add(hl);
+    });
+
+    const taxiSign = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6, 0.18, 0.25),
+      new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+    );
+    taxiSign.position.set(-0.1, 1.74, 0);
+    this.vimalTaxiGroup.add(taxiSign);
+
+    const tireMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.9 });
+    [-1.2, 1.2].forEach((wx) => {
+      [-0.92, 0.92].forEach((wz) => {
+        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.2, 16), tireMat);
+        w.rotation.x = Math.PI / 2;
+        w.position.set(wx, 0.36, wz);
+        this.vimalTaxiGroup!.add(w);
+      });
+    });
+
+    this.vimalTaxiGroup.position.set(x, y, z);
+    this.vimalTaxiGroup.rotation.y = 0.08;
+    this.chapterGroup.add(this.vimalTaxiGroup);
+  }
+
+  private createMoorthySir(x: number, y: number, z: number) {
+    this.moorthyGroup = new THREE.Group();
+
+    // 1. Ornate Cream-White Silk Shirt
+    const silkMat = new THREE.MeshStandardMaterial({ color: 0xfef9c3, roughness: 0.6, metalness: 0.15 });
+    const chest = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.1, 0.5), silkMat);
+    chest.position.y = 1.65;
+    chest.castShadow = true;
+    this.moorthyGroup.add(chest);
+
+    // 2. Thick 24K Gold Chain Necklace
+    const goldChainMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.95, roughness: 0.1 });
+    const goldChain = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.05, 8, 16), goldChainMat);
+    goldChain.rotation.x = Math.PI / 2.3;
+    goldChain.position.set(0, 2.05, 0.16);
+    this.moorthyGroup.add(goldChain);
+
+    // 3. Head & Mustache
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xd49b70, roughness: 0.75 });
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 16), skinMat);
+    head.position.y = 2.45;
+    head.castShadow = true;
+    this.moorthyGroup.add(head);
+
+    // Styled Hair
+    const hair = new THREE.Mesh(
+      new THREE.SphereGeometry(0.37, 16, 16, 0, Math.PI * 2, 0, Math.PI * 0.6),
+      new THREE.MeshStandardMaterial({ color: 0x52525b, roughness: 0.9 })
+    );
+    hair.position.set(0, 2.58, -0.05);
+    this.moorthyGroup.add(hair);
+
+    // Mustache
+    const mustache = new THREE.Mesh(
+      new THREE.BoxGeometry(0.24, 0.08, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0x27272a })
+    );
+    mustache.position.set(0, 2.36, 0.32);
+    this.moorthyGroup.add(mustache);
+
+    // Gold Rimmed Aviators
+    const glasses = new THREE.Mesh(
+      new THREE.BoxGeometry(0.48, 0.14, 0.1),
+      new THREE.MeshStandardMaterial({ color: 0x09090b, metalness: 0.9 })
+    );
+    glasses.position.set(0, 2.52, 0.32);
+    this.moorthyGroup.add(glasses);
+
+    // Cream Dhoti
+    const dhoti = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.1, 0.5), silkMat);
+    dhoti.position.y = 0.65;
+    dhoti.castShadow = true;
+    this.moorthyGroup.add(dhoti);
+
+    this.moorthyGroup.position.set(x, y, z);
+    this.chapterGroup.add(this.moorthyGroup);
+  }
+
+  private createMoorthyLuxuryCar(x: number, y: number, z: number) {
+    this.moorthyCarGroup = new THREE.Group();
+
+    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2, metalness: 0.8 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1, transparent: true, opacity: 0.85 });
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.75, 1.9), whiteMat);
+    body.position.y = 0.65;
+    body.castShadow = true;
+    this.moorthyCarGroup.add(body);
+
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.7, 1.7), glassMat);
+    cabin.position.set(-0.2, 1.3, 0);
+    this.moorthyCarGroup.add(cabin);
+
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.95, roughness: 0.1 });
+    const bumper = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.28, 1.8), chromeMat);
+    bumper.position.set(2.25, 0.5, 0);
+    this.moorthyCarGroup.add(bumper);
+
+    const tireMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.9 });
+    [-1.3, 1.3].forEach((wx) => {
+      [-0.96, 0.96].forEach((wz) => {
+        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.22, 16), tireMat);
+        w.rotation.x = Math.PI / 2;
+        w.position.set(wx, 0.38, wz);
+        this.moorthyCarGroup!.add(w);
+      });
+    });
+
+    this.moorthyCarGroup.position.set(x, y, z);
+    this.chapterGroup.add(this.moorthyCarGroup);
+  }
+
+  private createArmoredSUV(x: number, y: number, z: number, rotY: number) {
+    const suvGroup = new THREE.Group();
+
+    const armorMat = new THREE.MeshStandardMaterial({
+      color: 0x18181b,
+      metalness: 0.55,
+      roughness: 0.35
+    });
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      roughness: 0.1,
+      metalness: 0.9,
+      transparent: true,
+      opacity: 0.88
+    });
+
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(4.8, 1.1, 2.2), armorMat);
+    chassis.position.y = 0.9;
+    chassis.castShadow = true;
+    suvGroup.add(chassis);
+
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.95, 2.05), glassMat);
+    cabin.position.set(-0.35, 1.85, 0);
+    suvGroup.add(cabin);
+
+    const steelMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.9, roughness: 0.2 });
+    const bullBar = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.7, 1.8), steelMat);
+    bullBar.position.set(2.45, 0.9, 0);
+    suvGroup.add(bullBar);
+
+    const rack = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.15, 1.9), steelMat);
+    rack.position.set(-0.35, 2.4, 0);
+    suvGroup.add(rack);
+
+    const hlMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+    [-0.7, 0.7].forEach((hz) => {
+      const hl = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12), hlMat);
+      hl.position.set(2.42, 1.05, hz);
+      suvGroup.add(hl);
+    });
+
+    const tireMat = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.9 });
+    [-1.5, 1.5].forEach((wx) => {
+      [-1.15, 1.15].forEach((wz) => {
+        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.32, 18), tireMat);
+        w.rotation.x = Math.PI / 2;
+        w.position.set(wx, 0.48, wz);
+        w.castShadow = true;
+        suvGroup.add(w);
+      });
+    });
+
+    suvGroup.position.set(x, y, z);
+    suvGroup.rotation.y = rotY;
+    this.chapterGroup.add(suvGroup);
+    this.suvs.push(suvGroup);
+  }
+
+  private createThug(x: number, y: number, z: number, rotY: number, jacketColor: number = 0x18181b) {
+    const group = new THREE.Group();
+
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.75 });
+    const jacketMat = new THREE.MeshStandardMaterial({ color: jacketColor, roughness: 0.5, metalness: 0.3 });
+    const jeansMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 });
+
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.95, 0.4), jacketMat);
+    torso.position.y = 1.35;
+    torso.castShadow = true;
+    group.add(torso);
+
+    const legs = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.85, 0.36), jeansMat);
+    legs.position.y = 0.5;
+    legs.castShadow = true;
+    group.add(legs);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 16), skinMat);
+    head.position.y = 2.05;
+    head.castShadow = true;
+    group.add(head);
+
+    const shades = new THREE.Mesh(
+      new THREE.BoxGeometry(0.38, 0.1, 0.08),
+      new THREE.MeshStandardMaterial({ color: 0x09090b, metalness: 0.95 })
+    );
+    shades.position.set(0, 2.1, 0.24);
+    group.add(shades);
+
+    const armR = new THREE.Group();
+    const armRMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18), jacketMat);
+    armRMesh.position.y = -0.3;
+    armR.add(armRMesh);
+
+    // Machete / Weapon
+    const bladeMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.95, roughness: 0.1 });
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.75, 0.14), bladeMat);
+    blade.position.set(0, -0.65, 0.2);
+    armR.add(blade);
+
+    armR.position.set(0.45, 1.7, 0);
+    group.add(armR);
+
+    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18), jacketMat);
+    armL.position.set(-0.45, 1.4, 0);
+    group.add(armL);
+
+    group.position.set(x, y, z);
+    group.rotation.y = rotY;
+    this.chapterGroup.add(group);
+
+    this.thugs.push({
+      group,
+      alive: true,
+      vel: new THREE.Vector3(),
+      rotVel: new THREE.Vector3(),
+      initialPos: new THREE.Vector3(x, y, z),
+      armR
+    });
+  }
+
+  // --- Chapter 2: Narrow Suspension Bridge over River Canyon ---
+
+  private buildChapter2SuspensionBridge() {
+    // 1. Suspension Bridge Roadway with Wet Asphalt PBR
+    const roadMat = new THREE.MeshStandardMaterial({
+      map: this.asphaltTex,
+      bumpMap: this.asphaltBumpTex,
+      bumpScale: 0.08,
+      roughness: 0.65,
+      metalness: 0.2
+    });
+    const road = new THREE.Mesh(new THREE.BoxGeometry(140, 0.8, 8.8), roadMat);
+    road.position.set(0, -0.4, 0);
+    road.receiveShadow = true;
+    this.chapterGroup.add(road);
+
+    // Yellow Dashed Centerline
+    for (let x = -65; x < 65; x += 5) {
+      const line = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.0, 0.2),
+        new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+      );
+      line.rotation.x = -Math.PI / 2;
+      line.position.set(x, 0.02, 0);
+      this.chapterGroup.add(line);
+    }
+
+    // Heavy Curbs & Steel Safety Guardrails
+    const curbMat = new THREE.MeshStandardMaterial({ map: this.cobblestoneTex, roughness: 0.85 });
+    const railMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.85, roughness: 0.25 });
+    [-4.3, 4.3].forEach((z) => {
+      const curb = new THREE.Mesh(new THREE.BoxGeometry(140, 0.5, 0.6), curbMat);
+      curb.position.set(0, 0.15, z);
+      this.chapterGroup.add(curb);
+
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(140, 0.9, 0.18), railMat);
+      rail.position.set(0, 0.7, z);
+      this.chapterGroup.add(rail);
+
+      for (let x = -68; x <= 68; x += 4) {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9, 8), railMat);
+        post.position.set(x, 0.45, z);
+        this.chapterGroup.add(post);
+      }
+    });
+
+    // 2. High Suspension Towers
+    const towerMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9, roughness: 0.3 });
+    [-24, 24].forEach((tx) => {
+      const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.8, 28, 16), towerMat);
+      p1.position.set(tx, 14, -4.8);
+      p1.castShadow = true;
+      this.chapterGroup.add(p1);
+
+      const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.8, 28, 16), towerMat);
+      p2.position.set(tx, 14, 4.8);
+      p2.castShadow = true;
+      this.chapterGroup.add(p2);
+
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.4, 10.6), towerMat);
+      beam.position.set(tx, 27, 0);
+      this.chapterGroup.add(beam);
+    });
+
+    // 3. Main Steel Suspension Cables & Vertical Hangers
+    const cableMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.95, roughness: 0.15 });
+    [-4.8, 4.8].forEach((cz) => {
+      const pts: THREE.Vector3[] = [];
+      for (let x = -68; x <= 68; x += 2) {
+        const y = 27 - 22 * (1 - Math.pow(x / 68, 2));
+        pts.push(new THREE.Vector3(x, y, cz));
+      }
+      const curveGeo = new THREE.BufferGeometry().setFromPoints(pts);
+      const cable = new THREE.Line(curveGeo, new THREE.LineBasicMaterial({ color: 0x94a3b8, linewidth: 2 }));
+      this.chapterGroup.add(cable);
+
+      for (let x = -64; x <= 64; x += 3.5) {
+        const topY = 27 - 22 * (1 - Math.pow(x / 68, 2));
+        const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, topY, 6), cableMat);
+        wire.position.set(x, topY / 2, cz);
+        this.chapterGroup.add(wire);
+      }
+    });
+
+    // 4. River Canyon Surface Below
+    const riverMat = new THREE.MeshStandardMaterial({ color: 0x0c1b2a, roughness: 0.15, metalness: 0.85 });
+    const river = new THREE.Mesh(new THREE.PlaneGeometry(180, 120), riverMat);
+    river.rotation.x = -Math.PI / 2;
+    river.position.set(0, -22, 0);
+    this.chapterGroup.add(river);
+
+    // River Canyon Cliffs
+    const cliffMat = new THREE.MeshStandardMaterial({ map: this.stoneTempleTex, color: 0x1e293b, roughness: 0.95 });
+    [-34, 34].forEach((cz) => {
+      const cliff = new THREE.Mesh(new THREE.BoxGeometry(160, 32, 22), cliffMat);
+      cliff.position.set(0, 2, cz);
+      this.chapterGroup.add(cliff);
+    });
+
+    // 5. Position Tiger Muthuvel Pandian (bare-faced, glasses hooked in shirt pocket)
+    this.tigerGroup.position.set(-16, 0, 0);
+    this.tigerGroup.rotation.set(0, Math.PI / 2, 0); // Facing the 6 SUVs at +X
+    this.isSpecsWorn = false;
+    if (this.tigerGlassesGroup) {
+      this.tigerGlassesGroup.position.set(0.24, 1.88, 0.28);
+      this.tigerGlassesGroup.rotation.set(0, 0, 0);
+    }
+
+    // 6. Spawn Vimal the Taxi Driver standing right beside Tiger!
+    this.createVimalTaxiDriver(-15.2, 0.4, 1.3);
+
+    // 7. Spawn Vimal's Premier Padmini Yellow-and-Black Getaway Taxi
+    this.createVimalTaxi(-20.5, 0.4, 0.6);
+
+    // 8. Spawn Moorthy Sir & White Luxury Sedan
+    this.createMoorthySir(-11, 0.4, -2.0);
+    this.createMoorthyLuxuryCar(-14.5, 0.4, -2.2);
+
+    // 9. Spawn the 6 Armored Black Syndicate SUVs (The Roadblock)
+    this.createArmoredSUV(1.5, 0.4, -1.8, 0.08);
+    this.createArmoredSUV(2.8, 0.4, 1.8, -0.12);
+    this.createArmoredSUV(6.2, 0.4, -0.4, 0.2);
+    this.createArmoredSUV(8.6, 0.4, -2.0, -0.08);
+    this.createArmoredSUV(10.5, 0.4, 1.7, 0.18);
+    this.createArmoredSUV(13.8, 0.4, -0.8, -0.05);
+
+    // 10. Spawn the 6 Syndicate Goons
+    this.createThug(0.5, 0.4, -0.8, -0.5, 0x1e293b);
+    this.createThug(2.0, 0.4, 0.5, 0.3, 0x334155);
+    this.createThug(4.5, 0.4, -1.8, -0.2, 0x475569);
+    this.createThug(5.5, 0.4, 1.5, 0.6, 0x0f172a);
+    this.createThug(8.0, 0.4, 0.2, -0.4, 0x1e1b4b);
+    this.createThug(12.0, 0.4, 0.8, 0.2, 0x1c1917);
+
+    // 11. Golden Car Keys on lead SUV hood
+    const keyGeo = new THREE.TorusGeometry(0.14, 0.04, 8, 16);
+    const keyMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.95, roughness: 0.1 });
+    this.carKeyMesh = new THREE.Mesh(keyGeo, keyMat);
+    this.carKeyMesh.position.set(1.5, 2.0, -1.8);
+    this.chapterGroup.add(this.carKeyMesh);
+
+    // 12. Camera setup for Chapter 2
+    this.camera.position.set(-21.5, 5.2, 7.8);
+    this.camera.lookAt(-10, 1.8, 0);
+
+    if (this.onDialogue) {
+      this.onDialogue('lvl2_intro');
+    }
+  }
+
+  // --- Chapter 3: Highway Roadside Tea Stall ---
+  private buildChapter3TeaStall() {
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.95 });
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    this.chapterGroup.add(ground);
+
+    // Roadside Highway
+    const roadMat = new THREE.MeshStandardMaterial({ map: this.asphaltTex, roughness: 0.7 });
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(120, 14), roadMat);
+    road.rotation.x = -Math.PI / 2;
+    road.position.set(0, 0.02, 10);
+    this.chapterGroup.add(road);
+
+    // Wooden Tea Stall Structure
+    const woodMat = new THREE.MeshStandardMaterial({ map: this.woodBarkTex, roughness: 0.85 });
+    const stall = new THREE.Mesh(new THREE.BoxGeometry(7, 3.2, 4.5), woodMat);
+    stall.position.set(0, 1.6, -4);
+    this.chapterGroup.add(stall);
+
+    // Tin Roof
+    const tinMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.3 });
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.2, 5.5), tinMat);
+    roof.position.set(0, 3.3, -4);
+    this.chapterGroup.add(roof);
+
+    // Boiling Tea Kettle
+    const kettleMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.2 });
+    const kettle = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 0.6, 16), kettleMat);
+    kettle.position.set(0, 1.3, -1.8);
+    this.chapterGroup.add(kettle);
+
+    // Position Tiger sitting/standing calmly
+    this.tigerGroup.position.set(-1.2, 0, -0.5);
+    this.tigerGroup.rotation.set(0, 0, 0);
+    this.isSpecsWorn = true;
+    if (this.tigerGlassesGroup) {
+      this.tigerGlassesGroup.position.set(0, 2.62, 0.33);
+      this.tigerGlassesGroup.rotation.set(0, 0, 0);
+    }
+
+    // Vimal's Taxi parked nearby
+    this.createVimalTaxi(-12, 0.4, 8);
+
+    // 8 Syndicate Goons encircling the stall
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 1.5;
+      const gx = 6 * Math.cos(angle);
+      const gz = 3 + 5 * Math.sin(angle);
+      this.createThug(gx, 0.4, gz, -angle + Math.PI, 0x1e1b4b);
+    }
+
+    this.camera.position.set(-8, 4.5, 12);
+    this.camera.lookAt(0, 1.8, 0);
+
+    if (this.onDialogue) this.onDialogue('lvl3_intro');
+  }
+
+  // --- Chapter 4: Tunnel & Container Yard ---
+  private buildChapter4Tunnel() {
+    const roadMat = new THREE.MeshStandardMaterial({ map: this.asphaltTex, roughness: 0.6 });
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(140, 16), roadMat);
+    road.rotation.x = -Math.PI / 2;
+    this.chapterGroup.add(road);
+
+    // Tunnel Arch Walls
+    const wallMat = new THREE.MeshStandardMaterial({ map: this.brickFacadeTex, color: 0x334155, roughness: 0.9 });
+    [-8.5, 8.5].forEach((wz) => {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(140, 12, 1), wallMat);
+      wall.position.set(0, 6, wz);
+      this.chapterGroup.add(wall);
+    });
+
+    // Sodium Yellow Light Posts
+    for (let x = -50; x <= 50; x += 25) {
+      const light = new THREE.PointLight(0xf59e0b, 2.5, 18);
+      light.position.set(x, 7.5, 0);
+      this.chapterGroup.add(light);
+    }
+
+    this.tigerGroup.position.set(-18, 0, 0);
+    this.tigerGroup.rotation.set(0, Math.PI / 2, 0);
+
+    // Barricades & Armored Goons
+    for (let i = 0; i < 6; i++) {
+      this.createThug(4 + i * 2.5, 0.4, (i % 2 === 0 ? -2 : 2), -Math.PI / 2, 0x0f172a);
+    }
+
+    this.camera.position.set(-25, 4.2, 8);
+    this.camera.lookAt(-10, 1.8, 0);
+
+    if (this.onDialogue) this.onDialogue('lvl4_intro');
+  }
+
+  // --- Chapter 5: Smuggler's Fortress Climax ---
+  private buildChapter5Climax() {
+    const stoneMat = new THREE.MeshStandardMaterial({ map: this.stoneTempleTex, color: 0x1e293b, roughness: 0.95 });
+    const rampart = new THREE.Mesh(new THREE.BoxGeometry(120, 4, 30), stoneMat);
+    rampart.position.set(0, -2, 0);
+    this.chapterGroup.add(rampart);
+
+    // Ocean Surface
+    const oceanMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.9, roughness: 0.1 });
+    const ocean = new THREE.Mesh(new THREE.PlaneGeometry(200, 100), oceanMat);
+    ocean.rotation.x = -Math.PI / 2;
+    ocean.position.set(0, -6, 45);
+    this.chapterGroup.add(ocean);
+
+    this.tigerGroup.position.set(-12, 0, 0);
+    this.tigerGroup.rotation.set(0, Math.PI / 2, 0);
+
+    for (let i = 0; i < 8; i++) {
+      this.createThug(2 + i * 3, 0.4, (Math.random() - 0.5) * 8, -Math.PI / 2, 0x18181b);
+    }
+
+    this.camera.position.set(-20, 5, 10);
+    this.camera.lookAt(0, 2, 0);
+
+    if (this.onDialogue) this.onDialogue('lvl10_finale');
+  }
+
+  // --- Load / Switch Chapter Cleanly ---
+  public loadChapter(levelId: number) {
+    this.currentLevelId = levelId;
+    this.isExecutingShakeSequence = false;
+
+    // Reset game state
+    this.state = {
+      aura: 0,
+      multiplier: 1,
+      composure: 100,
+      vijiSuspicion: 0,
+      hukumMode: false,
+      phase: 'STEALTH',
+      coconutKicked: false,
+      rickshawRolling: false,
+      fireworksExploded: false
+    };
+
+    // Clean up chapter-specific group
+    while (this.chapterGroup.children.length > 0) {
+      const obj = this.chapterGroup.children[0];
+      this.chapterGroup.remove(obj);
+    }
+
+    // Clean up sniper beams & reticles
+    this.sniperBeams.forEach((b) => this.scene.remove(b));
+    this.sniperBeams = [];
+    this.sniperReticles.forEach((r) => this.scene.remove(r));
+    this.sniperReticles = [];
+
+    // Clean up particles
+    this.fireworkParticles.forEach((p) => this.scene.remove(p.mesh));
+    this.fireworkParticles = [];
+
+    // Clean up thugs
+    this.thugs.forEach((thug) => {
+      this.scene.remove(thug.group);
+      this.chapterGroup.remove(thug.group);
+    });
+    this.thugs = [];
+    this.suvs = [];
+    this.carKeyMesh = null;
+    this.vimalGroup = null;
+    this.vimalTaxiGroup = null;
+    this.moorthyGroup = null;
+    this.moorthyCarGroup = null;
+
+    this.setChapterAtmosphere(levelId);
+    this.startTime = Date.now();
+
+    if (levelId === 1) {
+      this.environmentGroup.visible = true;
+      this.vijiGroup.visible = true;
+      this.rickshawGroup.visible = true;
+      this.coconutMesh.visible = true;
+      this.fireworksGroup.visible = true;
+
+      // Position Tiger in market
+      this.tigerGroup.position.set(-5.2, 0, 0.5);
+      this.tigerGroup.rotation.set(0, 0, 0);
+      this.isSpecsWorn = true;
+      if (this.tigerGlassesGroup) {
+        this.tigerGlassesGroup.position.set(0, 2.62, 0.33);
+        this.tigerGlassesGroup.rotation.set(0, 0, 0);
+      }
+      this.buildThugs();
+
+      this.camera.position.set(-10.5, 9.2, 16.5);
+      this.camera.lookAt(0, 1.8, 2);
+
+      if (this.onDialogue) this.onDialogue('lvl1_intro');
+    } else {
+      // Hide market-specific groups for other chapters
+      this.environmentGroup.visible = false;
+      this.vijiGroup.visible = false;
+      this.rickshawGroup.visible = false;
+      this.coconutMesh.visible = false;
+      this.fireworksGroup.visible = false;
+
+      if (levelId === 2) {
+        this.buildChapter2SuspensionBridge();
+      } else if (levelId === 3) {
+        this.buildChapter3TeaStall();
+      } else if (levelId === 4) {
+        this.buildChapter4Tunnel();
+      } else {
+        this.buildChapter5Climax();
+      }
+    }
+
+    this.notifyState();
+  }
+
+  // --- Chapter 2 Set-Piece: Wear Specs, Shake Twice, Sniper SUV Attack, Explosive Blast ---
+  public triggerChapter2GlassesShakeSequence() {
+    if (this.isExecutingShakeSequence || this.state.phase === 'VICTORY') return;
+    this.isExecutingShakeSequence = true;
+    this.state.hukumMode = true;
+    this.state.phase = 'HUKUM';
+    this.state.multiplier = 10;
+
+    // Phase 1: Tiger raises arm and puts on aviator specs (0ms to 500ms)
+    this.tigerArmR.rotation.x = -1.55;
+    const startPos = new THREE.Vector3(0.24, 1.88, 0.28);
+    const targetPos = new THREE.Vector3(0, 2.62, 0.33);
+    let wearProg = 0;
+    const wearInterval = setInterval(() => {
+      wearProg += 0.08;
+      this.tigerGlassesGroup.position.lerpVectors(startPos, targetPos, Math.min(1, wearProg));
+      if (wearProg >= 1) {
+        clearInterval(wearInterval);
+        this.isSpecsWorn = true;
+      }
+    }, 16);
+
+    soundManager.playSpecsClink();
+    if (this.onDialogue) this.onDialogue('lvl2_tiger_cue');
+    this.notifyState();
+
+    // Phase 2: First Shake (at 600ms)
+    setTimeout(() => {
+      soundManager.playSpecsShakeHit(1);
+      this.tigerGroup.rotation.z = -0.16;
+      this.tigerGlassesGroup.rotation.z = -0.14;
+      setTimeout(() => {
+        this.tigerGroup.rotation.z = 0.12;
+        this.tigerGlassesGroup.rotation.z = 0.10;
+        setTimeout(() => {
+          this.tigerGroup.rotation.z = 0;
+          this.tigerGlassesGroup.rotation.z = 0;
+        }, 80);
+      }, 80);
+    }, 600);
+
+    // Phase 3: Second Shake & Signal (at 1100ms)
+    setTimeout(() => {
+      soundManager.playSpecsShakeHit(2); // Heavy 808 sub-bass drop!
+      this.tigerArmR.rotation.x = 0; // Lowers arm
+      this.tigerGroup.rotation.z = 0.22;
+      this.tigerGlassesGroup.rotation.z = 0.20;
+      setTimeout(() => {
+        this.tigerGroup.rotation.z = -0.18;
+        this.tigerGlassesGroup.rotation.z = -0.16;
+        setTimeout(() => {
+          this.tigerGroup.rotation.z = 0;
+          this.tigerGlassesGroup.rotation.z = 0;
+        }, 90);
+      }, 90);
+
+      if (this.onDialogue) this.onDialogue('lvl2_shake_specs');
+      this.notifyState();
+    }, 1100);
+
+    // Phase 4: Sniper Attack on the 6 SUVs (at 1600ms)
+    setTimeout(() => {
+      soundManager.playSniperVolley(6); // 6 synchronized rifle shots echoing across canyon!
+
+      // 6 red laser targeting lines from cliffs to SUVs
+      this.suvs.forEach((suv, idx) => {
+        const beamMat = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 3 });
+        const pts = [
+          new THREE.Vector3(suv.position.x - 28, 22, (idx % 2 === 0 ? -24 : 24)),
+          suv.position.clone().add(new THREE.Vector3(0, 1.2, 0))
+        ];
+        const beam = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), beamMat);
+        this.scene.add(beam);
+        this.sniperBeams.push(beam);
+
+        // Tire blowout / sparks
+        suv.position.y -= 0.12;
+      });
+
+      // Vimal cowers down in comical fear beside Tiger
+      if (this.vimalGroup) {
+        this.vimalGroup.position.y = 0.12;
+        this.vimalGroup.rotation.x = 0.35;
+      }
+    }, 1600);
+
+    // Phase 5: Massive SUV Explosive Blast & Goons Flying (at 2400ms)
+    setTimeout(() => {
+      soundManager.playExplosion();
+      this.sniperBeams.forEach((b) => this.scene.remove(b));
+      this.sniperBeams = [];
+
+      // 150+ fireball particles on the 6 SUVs
+      const colors = [0xff4500, 0xffa500, 0xff0000, 0xffff00, 0xffffff];
+      this.suvs.forEach((suv) => {
+        for (let i = 0; i < 24; i++) {
+          const pGeo = new THREE.SphereGeometry(0.2 + Math.random() * 0.14, 6, 6);
+          const pMat = new THREE.MeshBasicMaterial({ color: colors[i % colors.length] });
+          const p = new THREE.Mesh(pGeo, pMat);
+          p.position.copy(suv.position).add(
+            new THREE.Vector3(
+              (Math.random() - 0.5) * 2.2,
+              0.9 + Math.random() * 0.5,
+              (Math.random() - 0.5) * 1.6
+            )
+          );
+          this.scene.add(p);
+          this.fireworkParticles.push({
+            mesh: p,
+            vel: new THREE.Vector3(
+              (Math.random() - 0.5) * 15,
+              9 + Math.random() * 12,
+              (Math.random() - 0.5) * 15
+            ),
+            life: 1.4 + Math.random() * 0.7
+          });
+        }
+        // Buck and tilt the burned SUVs
+        suv.rotation.z = (Math.random() - 0.5) * 0.22;
+        suv.position.y += 0.25;
+      });
+
+      // Launch the 6 thugs flying over bridge railings into river gorge below!
+      this.thugs.forEach((thug, i) => {
+        if (thug.alive) {
+          thug.alive = false;
+          const sideDir = i % 2 === 0 ? 1 : -1;
+          thug.vel.set(
+            (Math.random() - 0.5) * 6 + 4,
+            18 + Math.random() * 6,
+            sideDir * (12 + Math.random() * 5)
+          );
+          thug.rotVel.set(Math.random() * 10, Math.random() * 10, Math.random() * 10);
+        }
+      });
+
+      // Car keys fly across bridge in a golden arc into Vimal's hands
+      if (this.carKeyMesh) {
+        const startKey = this.carKeyMesh.position.clone();
+        const targetKey = new THREE.Vector3(-15.2, 1.25, 1.3);
+        let keyProg = 0;
+        const keyInterval = setInterval(() => {
+          keyProg += 0.035;
+          if (this.carKeyMesh) {
+            this.carKeyMesh.position.lerpVectors(startKey, targetKey, keyProg);
+            this.carKeyMesh.position.y += Math.sin(keyProg * Math.PI) * 0.45;
+            this.carKeyMesh.rotation.y += 0.45;
+            this.carKeyMesh.rotation.z += 0.45;
+          }
+          if (keyProg >= 1) {
+            clearInterval(keyInterval);
+          }
+        }, 16);
+      }
+    }, 2400);
+
+    // Phase 6: Vimal's Shock, Moorthy's Boast & Jailer Victory Theme
+    setTimeout(() => {
+      if (this.vimalGroup) {
+        this.vimalGroup.position.y = 0.4;
+        this.vimalGroup.rotation.x = 0;
+      }
+      if (this.onDialogue) this.onDialogue('lvl2_vimal_shock');
+    }, 3200);
+
+    setTimeout(() => {
+      if (this.onDialogue) this.onDialogue('lvl2_victory');
+      soundManager.playJailerThemeVictory();
+      this.triggerVictory();
+    }, 5200);
+  }
+
+  // --- Chapter 3 Sequence ---
+  private triggerChapter3TeaStallSequence() {
+    if (this.state.phase === 'VICTORY') return;
+    this.state.hukumMode = true;
+    this.state.phase = 'HUKUM';
+    soundManager.playSpectacleFlipBassDrop();
+    soundManager.playSniperVolley(8);
+
+    if (this.onDialogue) this.onDialogue('lvl3_spec_flip');
+
+    this.thugs.forEach((thug) => {
+      if (thug.alive) {
+        thug.alive = false;
+        thug.vel.set((Math.random() - 0.5) * 6, 8 + Math.random() * 4, (Math.random() - 0.5) * 6);
+        thug.rotVel.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
+      }
+    });
+
+    setTimeout(() => {
+      if (this.onDialogue) this.onDialogue('lvl3_victory');
+      soundManager.playJailerThemeVictory();
+      this.triggerVictory();
+    }, 2500);
+  }
+
+  // --- Chapter 4 Sequence ---
+  private triggerChapter4TunnelSequence() {
+    if (this.state.phase === 'VICTORY') return;
+    this.state.hukumMode = true;
+    this.state.phase = 'HUKUM';
+    soundManager.playCameoSummon();
+    soundManager.playSniperVolley(6);
+
+    if (this.onDialogue) this.onDialogue('lvl4_spec_flip');
+
+    this.thugs.forEach((thug) => {
+      if (thug.alive) {
+        thug.alive = false;
+        thug.vel.set(8 + Math.random() * 4, 6 + Math.random() * 4, (Math.random() - 0.5) * 6);
+      }
+    });
+
+    setTimeout(() => {
+      if (this.onDialogue) this.onDialogue('lvl4_victory');
+      soundManager.playJailerThemeVictory();
+      this.triggerVictory();
+    }, 2500);
+  }
+
+  // --- Chapter 5 Climax Sequence ---
+  private triggerChapter5ClimaxSequence() {
+    if (this.state.phase === 'VICTORY') return;
+    this.state.hukumMode = true;
+    this.state.phase = 'HUKUM';
+    soundManager.playSpecsShakeHit(2);
+    soundManager.playSniperVolley(10);
+
+    if (this.onDialogue) this.onDialogue('lvl10_finale');
+
+    this.thugs.forEach((thug) => {
+      if (thug.alive) {
+        thug.alive = false;
+        thug.vel.set((Math.random() - 0.5) * 10, 14 + Math.random() * 8, (Math.random() - 0.5) * 10);
+      }
+    });
+
+    setTimeout(() => {
+      soundManager.playJailerThemeVictory();
+      this.triggerVictory();
+    }, 3000);
+  }
+
   public setChapterAtmosphere(levelId: number) {
     this.currentLevelId = levelId;
     if (!this.sunLight || !this.ambientLight) return;
@@ -1677,6 +2655,20 @@ export class MarketScene3D {
   }
 
   public triggerSpectacleFlip() {
+    if (this.currentLevelId === 2) {
+      this.triggerChapter2GlassesShakeSequence();
+      return;
+    } else if (this.currentLevelId === 3) {
+      this.triggerChapter3TeaStallSequence();
+      return;
+    } else if (this.currentLevelId === 4) {
+      this.triggerChapter4TunnelSequence();
+      return;
+    } else if (this.currentLevelId >= 5) {
+      this.triggerChapter5ClimaxSequence();
+      return;
+    }
+
     if (this.state.hukumMode) return;
     this.state.hukumMode = true;
     this.state.phase = 'HUKUM';
@@ -1775,16 +2767,39 @@ export class MarketScene3D {
       }
     }
 
-    // Smooth Low-Angle Cinema Camera Follow
-    const targetCamX = this.tigerGroup.position.x - 5.5;
-    const targetCamZ = this.tigerGroup.position.z + 15.5;
-    this.camera.position.x += (targetCamX - this.camera.position.x) * 0.05;
-    this.camera.position.z += (targetCamZ - this.camera.position.z) * 0.05;
-    this.camera.lookAt(
-      this.tigerGroup.position.x + 3.5,
-      2.2,
-      this.tigerGroup.position.z + 1.0
-    );
+    // Camera and Chapter-specific Character Sync
+    if (this.currentLevelId === 2) {
+      const targetCamX = this.tigerGroup.position.x - 7.5;
+      const targetCamZ = this.tigerGroup.position.z + 8.5;
+      this.camera.position.x += (targetCamX - this.camera.position.x) * 0.05;
+      this.camera.position.z += (targetCamZ - this.camera.position.z) * 0.05;
+      this.camera.position.y += (4.8 - this.camera.position.y) * 0.05;
+      this.camera.lookAt(
+        this.tigerGroup.position.x + 8.0,
+        1.8,
+        this.tigerGroup.position.z
+      );
+
+      // Vimal comic idle panic & follow Tiger
+      if (this.vimalGroup && !this.state.hukumMode) {
+        this.vimalGroup.rotation.y = Math.PI / 2 + Math.sin(this.idleTime * 10) * 0.05;
+        const targetVimalX = this.tigerGroup.position.x + 0.8;
+        const targetVimalZ = this.tigerGroup.position.z + 1.3;
+        this.vimalGroup.position.x += (targetVimalX - this.vimalGroup.position.x) * 0.08;
+        this.vimalGroup.position.z += (targetVimalZ - this.vimalGroup.position.z) * 0.08;
+      }
+    } else {
+      // Smooth Low-Angle Cinema Camera Follow
+      const targetCamX = this.tigerGroup.position.x - 5.5;
+      const targetCamZ = this.tigerGroup.position.z + 15.5;
+      this.camera.position.x += (targetCamX - this.camera.position.x) * 0.05;
+      this.camera.position.z += (targetCamZ - this.camera.position.z) * 0.05;
+      this.camera.lookAt(
+        this.tigerGroup.position.x + 3.5,
+        2.2,
+        this.tigerGroup.position.z + 1.0
+      );
+    }
   }
 
   private handleMovement(delta: number, keys: { left: boolean; right: boolean; up: boolean; down: boolean }) {
@@ -1819,6 +2834,8 @@ export class MarketScene3D {
   }
 
   private updateVijiPatrol(delta: number) {
+    if (this.currentLevelId !== 1 || !this.vijiVisionMesh || !this.vijiGroup) return;
+
     this.vijiTurnTimer += delta;
     if (this.vijiTurnTimer > 3.5) {
       this.vijiTurnTimer = 0;
@@ -1924,36 +2941,7 @@ export class MarketScene3D {
   }
 
   public retry() {
-    this.state = {
-      aura: 0,
-      multiplier: 1,
-      composure: 100,
-      vijiSuspicion: 0,
-      hukumMode: false,
-      phase: 'STEALTH',
-      coconutKicked: false,
-      rickshawRolling: false,
-      fireworksExploded: false
-    };
-
-    this.tigerGroup.position.set(-5.2, 0, 0.5);
-    this.rickshawGroup.position.set(-1.0, 0, -2.2);
-    this.rickshawGroup.rotation.y = 0.4;
-    this.coconutMesh.position.set(-3.2, 0.42, -1.2);
-
-    this.thugs.forEach((thug) => {
-      thug.alive = true;
-      thug.group.rotation.set(0, 0, 0);
-      thug.group.position.copy(thug.initialPos);
-    });
-
-    this.sniperBeams.forEach((b) => this.scene.remove(b));
-    this.sniperBeams = [];
-    this.sniperReticles.forEach((r) => this.scene.remove(r));
-    this.sniperReticles = [];
-
-    this.startTime = Date.now();
-    this.notifyState();
+    this.loadChapter(this.currentLevelId);
   }
 
   private notifyState() {

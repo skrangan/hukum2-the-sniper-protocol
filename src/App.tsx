@@ -192,8 +192,7 @@ export const App: React.FC = () => {
     setCurrentLevelId(id);
     setShowVictory(false);
     if (threeGameManagerRef.current) {
-      threeGameManagerRef.current.setChapterAtmosphere(id);
-      threeGameManagerRef.current.retry();
+      threeGameManagerRef.current.loadChapter(id);
     }
     const dialogueMap: Record<number, string> = {
       1: 'lvl1_intro',
@@ -208,7 +207,8 @@ export const App: React.FC = () => {
 
   const handleNextLevel = () => {
     setShowVictory(false);
-    setShowLevelSelect(true);
+    const nextId = currentLevelId + 1;
+    handleSelectChapter(nextId);
   };
 
   return (

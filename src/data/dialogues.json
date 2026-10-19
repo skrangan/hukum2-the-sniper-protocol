@@ -36,11 +36,39 @@
       "sfx": "tiger_chuckle"
     },
     "lvl2_intro": {
+      "speaker": "VIMAL",
+      "portrait": "vimal_shock",
+      "tanglish": "Thalaiva! 6 black SUV ninnu narrow bridge-ah complete-ah block panniduchu! Engine off pannitaen, namaku aappu dhaan!",
+      "english": "Boss! 6 black SUVs have completely blocked this narrow bridge! I killed the taxi engine, we're surrounded!",
+      "sfx": "vimal_gasp"
+    },
+    "lvl2_tiger_cue": {
+      "speaker": "TIGER",
+      "portrait": "tiger_aviator",
+      "tanglish": "Vimal, calm-ah iru. Kannadi shirt pocket-la irukku... Maattattuma?",
+      "english": "Vimal, stay calm. My aviators are right here in my shirt pocket... Shall I put them on?",
+      "sfx": "specs_clink"
+    },
+    "lvl2_shake_specs": {
+      "speaker": "TIGER",
+      "portrait": "tiger_glasses_flip",
+      "tanglish": "Oru shake... Rendaavathu shake... Hilltop Snipers, target the 6 SUVs! HUKUM!",
+      "english": "One shake... Second shake... Hilltop snipers, target all 6 SUVs! HUKUM!",
+      "sfx": "hukum_bass_drop"
+    },
+    "lvl2_vimal_shock": {
+      "speaker": "VIMAL",
+      "portrait": "vimal_shock",
+      "tanglish": "Ammaadii! Kannadiya rendu thadava aatuna... 6 SUV-um blast aayi key en kayila vandhu vizhudha?!",
+      "english": "Good lord! He shook his glasses twice... and all 6 SUVs blew up into fireballs while the keys landed right in my hands?!",
+      "sfx": "vimal_scream"
+    },
+    "lvl2_victory": {
       "speaker": "MOORTHY",
       "portrait": "moorthy_clueless",
-      "tanglish": "Tiger! 6 SUV vandhu vazhiya marichu nikkudhu... En power-ah kaattattuma?",
-      "english": "Tiger! 6 SUVs are blocking the bridge... Should I flex my political influence?",
-      "sfx": "moorthy_gasp"
+      "tanglish": "Paathiya Tiger! Oru phone call, anju nimisham... Six SUVs flat-u! En power purinjatha?",
+      "english": "See that Tiger! One phone call, five minutes... Six SUVs wiped out! Did you grasp my power?",
+      "sfx": "moorthy_laugh"
     },
     "lvl3_intro": {
       "speaker": "TIGER",
@@ -49,12 +77,40 @@
       "english": "Bro... My tea hasn't even arrived yet, and your boys have already left the planet.",
       "sfx": "tea_kettle_whistle"
     },
+    "lvl3_spec_flip": {
+      "speaker": "TIGER",
+      "portrait": "tiger_glasses_flip",
+      "tanglish": "Oru Sun, Oru Moon... Adhe maadhiri Tamilnadu-kku ore oru Tiger. HUKUM!",
+      "english": "One Sun, One Moon... In the same way, there is only one Tiger. HUKUM!",
+      "sfx": "hukum_bass_drop"
+    },
+    "lvl3_victory": {
+      "speaker": "TIGER",
+      "portrait": "tiger_coffee",
+      "tanglish": "Tea nalla irukku thambi. Vimal, vandiya edu, adutha location polam!",
+      "english": "The tea is excellent. Vimal, start the taxi, let's head to the next hideout!",
+      "sfx": "tiger_chuckle"
+    },
     "lvl4_intro": {
       "speaker": "DILEEP",
       "portrait": "dileep_angry",
       "tanglish": "Tiger Muthuvel Pandian! Container yard-la unna thookama naan poga maatten!",
       "english": "Tiger Muthuvel Pandian! I'm not leaving this port without locking you in a cell!",
       "sfx": "dileep_shout"
+    },
+    "lvl4_spec_flip": {
+      "speaker": "TIGER",
+      "portrait": "tiger_glasses_flip",
+      "tanglish": "Mathew, container yard clearance protocol initiate pannu!",
+      "english": "Mathew, initiate container yard clearance protocol!",
+      "sfx": "hukum_bass_drop"
+    },
+    "lvl4_victory": {
+      "speaker": "MATHEW",
+      "portrait": "mathew_cigar",
+      "tanglish": "Pakshe Tiger, ivide nammude vintage Mercedes barricades ellam thool-aakki! Polam!",
+      "english": "Tiger, the vintage Mercedes turned all their barricades to dust! Time to roll!",
+      "sfx": "mercedes_engine"
     },
     "lvl7_cameo_narasimha": {
       "speaker": "NARASIMHA",

@@ -178,6 +178,10 @@ export class ThreeGameManager {
     this.marketScene.setChapterAtmosphere(levelId);
   }
 
+  public loadChapter(levelId: number) {
+    this.marketScene.loadChapter(levelId);
+  }
+
   public setTigerAttire(attireId: string) {
     this.marketScene.setTigerAttire(attireId);
   }

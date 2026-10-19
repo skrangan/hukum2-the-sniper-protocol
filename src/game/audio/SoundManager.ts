@@ -360,6 +360,79 @@ class SoundManager {
     flipOsc.stop(t + 0.42);
   }
 
+  // Metallic glasses frame click & lens tap
+  public playSpecsClink() {
+    const dest = this.getSfxDest();
+    if (!dest || !this.ctx) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(2800, t);
+    osc.frequency.exponentialRampToValueAtTime(1400, t + 0.08);
+    gain.gain.setValueAtTime(0.35, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+    osc.connect(gain);
+    gain.connect(dest);
+    osc.start(t);
+    osc.stop(t + 0.1);
+  }
+
+  // Glasses shake sound effect (Shake 1: sharp metallic swish; Shake 2: deep 808 sub bass drop)
+  public playSpecsShakeHit(shakeNum: 1 | 2 = 1) {
+    const dest = this.getSfxDest();
+    if (!dest || !this.ctx) return;
+    const t = this.ctx.currentTime;
+    if (shakeNum === 1) {
+      // First shake: metallic swish & punchy mid-tone
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(320, t);
+      osc.frequency.exponentialRampToValueAtTime(110, t + 0.16);
+      gain.gain.setValueAtTime(0.4, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      osc.connect(gain);
+      gain.connect(dest);
+      osc.start(t);
+      osc.stop(t + 0.2);
+    } else {
+      // Second shake: heavy 808 sub bass drop + metallic clink (Signals Hill Snipers!)
+      const subOsc = this.ctx.createOscillator();
+      const subGain = this.ctx.createGain();
+      subOsc.type = 'sine';
+      subOsc.frequency.setValueAtTime(220, t);
+      subOsc.frequency.exponentialRampToValueAtTime(34, t + 0.7);
+      subGain.gain.setValueAtTime(0.85, t);
+      subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.75);
+      subOsc.connect(subGain);
+      subGain.connect(dest);
+      subOsc.start(t);
+      subOsc.stop(t + 0.8);
+
+      const highOsc = this.ctx.createOscillator();
+      const highGain = this.ctx.createGain();
+      highOsc.type = 'triangle';
+      highOsc.frequency.setValueAtTime(3200, t);
+      highOsc.frequency.exponentialRampToValueAtTime(1800, t + 0.12);
+      highGain.gain.setValueAtTime(0.35, t);
+      highGain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+      highOsc.connect(highGain);
+      highGain.connect(dest);
+      highOsc.start(t);
+      highOsc.stop(t + 0.15);
+    }
+  }
+
+  // Rapid synchronized sniper volley (e.g. 6 shots across canyon)
+  public playSniperVolley(shots: number = 6) {
+    for (let i = 0; i < shots; i++) {
+      setTimeout(() => {
+        this.playSniperShot();
+      }, i * 75);
+    }
+  }
+
   // Sniper Rifle Suppressed / High-Caliber Crack + Shell Casing
   public playSniperShot() {
     const dest = this.getSfxDest();
@@ -608,36 +681,158 @@ class SoundManager {
     osc.stop(t + 0.27);
   }
 
+  // Authentic Jailer Mass Victory Anthem (Hukum Theme by Anirudh Ravichander)
+  public playJailerThemeVictory() {
+    if (!this.musicEnabled && !this.sfxEnabled) return;
+
+    this.initCtx();
+    if (!this.ctx) return;
+
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+
+    this.stopCinematicBgm();
+    this.setTheme('victory');
+
+    const dest = this.getMusicDest() || this.getSfxDest();
+    if (!dest) return;
+
+    const t = this.ctx.currentTime + 0.05;
+    const volScale = Math.max(0.4, this.musicVolume);
+
+    // 1. Initial Explosive 808 Sub-Bass Drop Hit (Earth-shattering mass impact)
+    const subOsc = this.ctx.createOscillator();
+    const subGain = this.ctx.createGain();
+    subOsc.type = 'sine';
+    subOsc.frequency.setValueAtTime(160, t);
+    subOsc.frequency.exponentialRampToValueAtTime(32, t + 1.2);
+    subGain.gain.setValueAtTime(0.9 * volScale, t);
+    subGain.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+    subOsc.connect(subGain);
+    subGain.connect(dest);
+    subOsc.start(t);
+    subOsc.stop(t + 1.4);
+
+    // 2. The Authentic "HUKUM / TIGER KA HUKUM" Mass Brass Theme (composed by Anirudh)
+    // Key: E Minor (E - G - A - B - D - E)
+    const melody: { note: number; duration: number; delay: number; octave2?: boolean }[] = [
+      // Phrase 1: The Building Swagger Riff
+      { note: 164.81, duration: 0.28, delay: 0.0 },    // E3
+      { note: 164.81, duration: 0.22, delay: 0.28 },   // E3
+      { note: 196.00, duration: 0.24, delay: 0.50 },   // G3
+      { note: 220.00, duration: 0.26, delay: 0.74 },   // A3
+      { note: 246.94, duration: 0.38, delay: 1.00 },   // B3
+      { note: 293.66, duration: 0.25, delay: 1.38 },   // D4
+      { note: 329.63, duration: 0.55, delay: 1.63, octave2: true }, // E4 (Major Brass Hit!)
+
+      // Phrase 2: The Downward Tiger Walk Stabs
+      { note: 293.66, duration: 0.24, delay: 2.22 },   // D4
+      { note: 246.94, duration: 0.26, delay: 2.46 },   // B3
+      { note: 220.00, duration: 0.24, delay: 2.72 },   // A3
+      { note: 196.00, duration: 0.28, delay: 2.96 },   // G3
+      { note: 164.81, duration: 0.70, delay: 3.24, octave2: true }, // E3 (Heavy resolve!)
+
+      // Phrase 3: Syncopated Hukum Turn
+      { note: 246.94, duration: 0.25, delay: 4.00 },   // B3
+      { note: 246.94, duration: 0.22, delay: 4.25 },   // B3
+      { note: 293.66, duration: 0.25, delay: 4.47 },   // D4
+      { note: 246.94, duration: 0.24, delay: 4.72 },   // B3
+      { note: 220.00, duration: 0.24, delay: 4.96 },   // A3
+      { note: 196.00, duration: 0.26, delay: 5.20 },   // G3
+      { note: 220.00, duration: 0.26, delay: 5.46 },   // A3
+      { note: 246.94, duration: 0.45, delay: 5.72 },   // B3
+
+      // Phrase 4: The Climax Screaming Horn (Heroic High Octave Peak)
+      { note: 329.63, duration: 0.26, delay: 6.25, octave2: true }, // E4
+      { note: 392.00, duration: 0.24, delay: 6.51, octave2: true }, // G4
+      { note: 440.00, duration: 0.26, delay: 6.75, octave2: true }, // A4
+      { note: 493.88, duration: 0.45, delay: 7.01, octave2: true }, // B4
+      { note: 587.33, duration: 0.32, delay: 7.46, octave2: true }, // D5
+      { note: 659.25, duration: 1.10, delay: 7.78, octave2: true }  // E5 (Iconic Anirudh Stadium Horn!)
+    ];
+
+    melody.forEach(({ note, duration, delay, octave2 }) => {
+      if (!this.ctx) return;
+      const startTime = t + delay;
+
+      // Layer A: Fat French Horn / Low Brass (Sawtooth + Low-pass)
+      const hornOsc = this.ctx.createOscillator();
+      const hornGain = this.ctx.createGain();
+      hornOsc.type = 'sawtooth';
+      hornOsc.frequency.setValueAtTime(note, startTime);
+
+      hornGain.gain.setValueAtTime(0.32 * volScale, startTime);
+      hornGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+      hornOsc.connect(hornGain);
+      hornGain.connect(dest);
+      hornOsc.start(startTime);
+      hornOsc.stop(startTime + duration);
+
+      // Layer B: Punchy Trumpet Lead (Square wave + slight detune for stadium brass thickness)
+      const trumOsc = this.ctx.createOscillator();
+      const trumGain = this.ctx.createGain();
+      trumOsc.type = 'square';
+      trumOsc.frequency.setValueAtTime(note * (octave2 ? 2.0 : 1.0) * 1.004, startTime);
+
+      trumGain.gain.setValueAtTime(0.18 * volScale, startTime);
+      trumGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration * 0.95);
+
+      trumOsc.connect(trumGain);
+      trumGain.connect(dest);
+      trumOsc.start(startTime);
+      trumOsc.stop(startTime + duration * 0.95);
+    });
+
+    // 3. Driving Anirudh 808 Sub Kick & Trap Clap Rhythm (0 to 9 seconds)
+    const kickTimes = [
+      0.0, 0.28, 0.74, 1.0, 1.63, 2.0, 2.22, 2.72, 3.24,
+      4.0, 4.47, 4.96, 5.72, 6.25, 6.75, 7.01, 7.78, 8.2, 8.6
+    ];
+
+    kickTimes.forEach((delay) => {
+      if (!this.ctx) return;
+      const kt = t + delay;
+      const kickOsc = this.ctx.createOscillator();
+      const kickGain = this.ctx.createGain();
+      kickOsc.type = 'sine';
+      kickOsc.frequency.setValueAtTime(155, kt);
+      kickOsc.frequency.exponentialRampToValueAtTime(40, kt + 0.16);
+
+      kickGain.gain.setValueAtTime(0.6 * volScale, kt);
+      kickGain.gain.exponentialRampToValueAtTime(0.001, kt + 0.24);
+
+      kickOsc.connect(kickGain);
+      kickGain.connect(dest);
+      kickOsc.start(kt);
+      kickOsc.stop(kt + 0.25);
+    });
+
+    // Snare / Stadium Claps on off-beats
+    const clapTimes = [0.5, 1.38, 2.46, 2.96, 4.25, 5.2, 6.51, 7.46, 8.4];
+    clapTimes.forEach((delay) => {
+      if (!this.ctx) return;
+      const ct = t + delay;
+      const clapOsc = this.ctx.createOscillator();
+      const clapGain = this.ctx.createGain();
+      clapOsc.type = 'triangle';
+      clapOsc.frequency.setValueAtTime(420, ct);
+      clapOsc.frequency.exponentialRampToValueAtTime(180, ct + 0.12);
+
+      clapGain.gain.setValueAtTime(0.25 * volScale, ct);
+      clapGain.gain.exponentialRampToValueAtTime(0.001, ct + 0.14);
+
+      clapOsc.connect(clapGain);
+      clapGain.connect(dest);
+      clapOsc.start(ct);
+      clapOsc.stop(ct + 0.15);
+    });
+  }
+
   // Mass Victory Brass Fanfare
   public playVictoryFanfare() {
-    this.setTheme('victory');
-    const dest = this.getSfxDest();
-    if (!dest || !this.ctx) return;
-
-    const notes = [261.63, 311.13, 392.0, 523.25, 622.25, 783.99];
-    notes.forEach((freq, idx) => {
-      if (!this.ctx) return;
-      const osc = this.ctx.createOscillator();
-      const filter = this.ctx.createBiquadFilter();
-      const gain = this.ctx.createGain();
-      const t = this.ctx.currentTime + idx * 0.095;
-
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(freq, t);
-
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(2400, t);
-
-      gain.gain.setValueAtTime(0.26, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
-
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(dest);
-
-      osc.start(t);
-      osc.stop(t + 0.58);
-    });
+    this.playJailerThemeVictory();
   }
 
   public setTheme(theme: MusicThemeMode) {
