@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Crosshair } from 'lucide-react';
+import { Compass } from 'lucide-react';
 import { ThreeGameManager } from '../game/three/ThreeGameManager';
 import { Game3DState } from '../game/three/MarketScene3D';
 
@@ -36,46 +36,46 @@ export const ThreeGameContainer: React.FC<ThreeGameContainerProps> = ({
   }, []);
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center bg-slate-950 overflow-hidden">
+    <div className="relative w-full h-full flex items-center justify-center bg-stone-950 overflow-hidden">
       {/* 3D WebGL Canvas Mount */}
       <div
         ref={mountRef}
         className="w-full h-full cursor-crosshair select-none"
       />
 
-      {/* Realistic Cinematic Vignette & Subtle Film Grain Overlay */}
+      {/* Subtle Cinema Vignette */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(circle at center, transparent 58%, rgba(2, 6, 23, 0.72) 100%)'
+            'radial-gradient(circle at center, transparent 60%, rgba(12, 8, 5, 0.72) 100%)'
         }}
       />
 
-      {/* Top-Right Tactical Field Manual & Keybind Telemetry */}
-      <div className="absolute top-16 right-5 z-20 hidden md:flex flex-col space-y-1.5 bg-slate-950/88 backdrop-blur-xl border border-amber-500/30 p-3 rounded-2xl text-left pointer-events-none select-none text-[11px] text-slate-300 shadow-2xl w-64">
-        <div className="flex items-center justify-between text-[10px] font-black text-amber-400 uppercase tracking-widest font-mono border-b border-slate-800 pb-1">
+      {/* Top-Right Controls Guide */}
+      <div className="absolute top-16 right-5 z-20 hidden md:flex flex-col space-y-1.5 bg-stone-950/88 backdrop-blur-xl border border-amber-600/30 p-3 rounded-2xl text-left pointer-events-none select-none text-[11px] text-stone-300 shadow-2xl w-64">
+        <div className="flex items-center justify-between text-[10px] font-black text-amber-400 uppercase tracking-widest border-b border-stone-800 pb-1">
           <span className="flex items-center space-x-1">
-            <Crosshair className="w-3 h-3 text-red-400" />
-            <span>FIELD PROTOCOLS</span>
+            <Compass className="w-3 h-3 text-amber-400" />
+            <span>CONTROLS</span>
           </span>
-          <span className="text-emerald-400">LIVE 3D</span>
+          <span className="text-amber-200/80">CHAPTER 1</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-400">Swagger Stride</span>
+          <span className="text-stone-400">Walk</span>
           <span className="font-mono font-bold text-white">[WASD / Arrows]</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-400">Coconut Hazard</span>
+          <span className="text-stone-400">Kick Coconut</span>
           <span className="font-mono font-bold text-amber-300">[E / Click / 2]</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-400">Spectacle Flip</span>
+          <span className="text-stone-400">Flip Shades (Hukum)</span>
           <span className="font-mono font-bold text-yellow-400">[SPACE]</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-400">Armory & Loadout</span>
-          <span className="font-mono font-bold text-cyan-300">[I]</span>
+          <span className="text-stone-400">Inventory & Allies</span>
+          <span className="font-mono font-bold text-amber-200">[I]</span>
         </div>
       </div>
     </div>

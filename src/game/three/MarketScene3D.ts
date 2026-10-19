@@ -32,6 +32,7 @@ export class MarketScene3D {
     vel: THREE.Vector3;
     rotVel: THREE.Vector3;
     initialPos: THREE.Vector3;
+    armR: THREE.Group;
   }[] = [];
   public sniperBeams: THREE.Line[] = [];
   public sniperReticles: THREE.Mesh[] = [];
@@ -65,6 +66,7 @@ export class MarketScene3D {
   private currentLevelId: number = 1;
   private startTime: number = 0;
   private walkTime: number = 0;
+  private idleTime: number = 0;
   private footstepTimer: number = 0;
   private tigerGlassesGroup!: THREE.Group;
   private tigerArmL!: THREE.Group;
@@ -73,16 +75,19 @@ export class MarketScene3D {
   private tigerLegR!: THREE.Group;
   private tigerTorsoMesh!: THREE.Mesh;
 
-  // Texture Loader & Procedural PBR Maps
-  private texLoader: THREE.TextureLoader = new THREE.TextureLoader();
+  // Procedural Realistic PBR Maps
   private asphaltTex!: THREE.CanvasTexture;
   private asphaltBumpTex!: THREE.CanvasTexture;
   private cobblestoneTex!: THREE.CanvasTexture;
   private stoneTempleTex!: THREE.CanvasTexture;
   private brickFacadeTex!: THREE.CanvasTexture;
+  private colonialOchreTex!: THREE.CanvasTexture;
   private woodBarkTex!: THREE.CanvasTexture;
   private fabricSilkTex!: THREE.CanvasTexture;
+  private veshtiFabricTex!: THREE.CanvasTexture;
   private neonSignTex!: THREE.CanvasTexture;
+  private silkEmporiumSignTex!: THREE.CanvasTexture;
+  private cinemaSignTex!: THREE.CanvasTexture;
   private skyBackdropTex!: THREE.CanvasTexture;
 
   // Callbacks
@@ -92,10 +97,10 @@ export class MarketScene3D {
 
   constructor() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x160d08);
-    this.scene.fog = new THREE.FogExp2(0x1c100b, 0.011);
+    this.scene.background = new THREE.Color(0x140c08);
+    this.scene.fog = new THREE.FogExp2(0x180e09, 0.011);
 
-    // Cinematic 35mm Low-Angle Action Camera (Over-the-shoulder / Street-level drama)
+    // Cinematic 35mm Low-Angle Action Camera
     this.camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.camera.position.set(-10.5, 9.2, 16.5);
     this.camera.lookAt(0, 1.8, 2);
@@ -115,84 +120,23 @@ export class MarketScene3D {
     this.startTime = Date.now();
   }
 
-  private createCharacterPortraitStandee(
-    portraitPath: string,
-    nameLabel: string,
-    roleColorHex: string,
-    width: number = 1.65,
-    height: number = 2.25
-  ): THREE.Group {
-    const cardGroup = new THREE.Group();
-
-    const portraitTex = this.texLoader.load(portraitPath);
-    portraitTex.colorSpace = THREE.SRGBColorSpace;
-
-    // Metallic Gold/Crimson Outer Frame Backing
-    const frameGeo = new THREE.BoxGeometry(width + 0.14, height + 0.14, 0.08);
-    const frameMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(roleColorHex),
-      metalness: 0.85,
-      roughness: 0.2
-    });
-    const frameMesh = new THREE.Mesh(frameGeo, frameMat);
-    frameMesh.position.y = height / 2 + 0.35;
-    frameMesh.castShadow = true;
-    cardGroup.add(frameMesh);
-
-    // High-Resolution Photographic Character Plane (Front & Back visible)
-    const photoGeo = new THREE.PlaneGeometry(width, height);
-    const photoMat = new THREE.MeshBasicMaterial({
-      map: portraitTex,
-      side: THREE.DoubleSide
-    });
-    const photoMesh = new THREE.Mesh(photoGeo, photoMat);
-    photoMesh.position.set(0, height / 2 + 0.35, 0.05);
-    cardGroup.add(photoMesh);
-
-    // Nameplate Banner at Base of Standee
-    const plateCanvas = document.createElement('canvas');
-    plateCanvas.width = 256;
-    plateCanvas.height = 64;
-    const pctx = plateCanvas.getContext('2d')!;
-    pctx.fillStyle = '#090d16';
-    pctx.fillRect(0, 0, 256, 64);
-    pctx.strokeStyle = roleColorHex;
-    pctx.lineWidth = 4;
-    pctx.strokeRect(2, 2, 252, 60);
-    pctx.fillStyle = '#f8fafc';
-    pctx.font = 'bold 26px sans-serif';
-    pctx.textAlign = 'center';
-    pctx.fillText(nameLabel, 128, 41);
-    const plateTex = new THREE.CanvasTexture(plateCanvas);
-
-    const plateMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(width * 0.92, 0.38),
-      new THREE.MeshBasicMaterial({ map: plateTex, side: THREE.DoubleSide })
-    );
-    plateMesh.position.set(0, 0.32, 0.07);
-    cardGroup.add(plateMesh);
-
-    return cardGroup;
-  }
-
   private generateRealisticTextures() {
-    // 1. Wet Rain-Slicked Asphalt with Specular Puddles & Weathered Aggregate
+    // 1. Wet Rain-Slicked Asphalt with Tire Tracks & Specular Aggregate
     const aspCanvas = document.createElement('canvas');
     aspCanvas.width = 512;
     aspCanvas.height = 512;
     const actx = aspCanvas.getContext('2d')!;
     actx.fillStyle = '#141820';
     actx.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 14000; i++) {
-      const v = 18 + Math.floor(Math.random() * 34);
+    for (let i = 0; i < 16000; i++) {
+      const v = 16 + Math.floor(Math.random() * 34);
       actx.fillStyle = `rgb(${v},${v + 2},${v + 6})`;
       actx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
     }
-    // Warm golden reflection streaks on wet road
     const grad = actx.createLinearGradient(0, 0, 512, 512);
-    grad.addColorStop(0, 'rgba(245, 158, 11, 0.06)');
+    grad.addColorStop(0, 'rgba(245, 158, 11, 0.07)');
     grad.addColorStop(0.5, 'rgba(15, 23, 42, 0.25)');
-    grad.addColorStop(1, 'rgba(239, 68, 68, 0.05)');
+    grad.addColorStop(1, 'rgba(239, 68, 68, 0.06)');
     actx.fillStyle = grad;
     actx.fillRect(0, 0, 512, 512);
 
@@ -202,7 +146,7 @@ export class MarketScene3D {
     this.asphaltTex.repeat.set(6, 6);
     this.asphaltBumpTex = this.asphaltTex;
 
-    // 2. Heritage Stone Sidewalk Flagstones with Moss & Mortar Grout
+    // 2. Heritage Granite Sidewalk Flagstones
     const cobCanvas = document.createElement('canvas');
     cobCanvas.width = 256;
     cobCanvas.height = 256;
@@ -241,45 +185,39 @@ export class MarketScene3D {
     }
     this.stoneTempleTex = new THREE.CanvasTexture(stCanvas);
 
-    // 4. Weathered South Indian Colonial Terracotta & Plaster Facade Texture
+    // 4. Weathered Terracotta Brick & Lime Plaster Facade Texture
     const brCanvas = document.createElement('canvas');
     brCanvas.width = 512;
     brCanvas.height = 512;
     const bctx = brCanvas.getContext('2d')!;
-    bctx.fillStyle = '#4a2c1d';
+    bctx.fillStyle = '#5c2d1c';
     bctx.fillRect(0, 0, 512, 512);
-    // Horizontal architectural molding bands
-    for (let y = 0; y < 512; y += 64) {
-      bctx.fillStyle = '#361f14';
-      bctx.fillRect(0, y, 512, 8);
-      bctx.fillStyle = '#6b3e26';
-      bctx.fillRect(0, y + 8, 512, 6);
-    }
-    // Warm recessed arched windows with wooden louvers
-    for (let wy = 80; wy < 420; wy += 150) {
-      for (let wx = 48; wx < 460; wx += 140) {
-        bctx.fillStyle = '#1c120c';
-        bctx.fillRect(wx - 6, wy - 6, 84, 112);
-        const wGrad = bctx.createLinearGradient(wx, wy, wx, wy + 100);
-        wGrad.addColorStop(0, '#f59e0b');
-        wGrad.addColorStop(1, '#7c2d12');
-        bctx.fillStyle = wGrad;
-        bctx.fillRect(wx, wy, 72, 100);
-        // Window mullions
-        bctx.strokeStyle = '#29170e';
-        bctx.lineWidth = 4;
-        bctx.strokeRect(wx, wy, 72, 100);
-        bctx.beginPath();
-        bctx.moveTo(wx + 36, wy);
-        bctx.lineTo(wx + 36, wy + 100);
-        bctx.moveTo(wx, wy + 50);
-        bctx.lineTo(wx + 72, wy + 50);
-        bctx.stroke();
+    for (let y = 0; y < 512; y += 16) {
+      for (let x = 0; x < 512; x += 32) {
+        const off = (y / 16) % 2 === 0 ? 0 : 16;
+        bctx.fillStyle = (x + y) % 48 === 0 ? '#6e3722' : '#4f2617';
+        bctx.fillRect((x + off) % 512, y, 30, 14);
       }
     }
     this.brickFacadeTex = new THREE.CanvasTexture(brCanvas);
+    this.brickFacadeTex.wrapS = THREE.RepeatWrapping;
+    this.brickFacadeTex.wrapT = THREE.RepeatWrapping;
+    this.brickFacadeTex.repeat.set(2, 2);
 
-    // 5. Aged Teak Wood & Crate Texture
+    // 5. Warm Colonial Ochre Stucco Texture
+    const ocCanvas = document.createElement('canvas');
+    ocCanvas.width = 256;
+    ocCanvas.height = 256;
+    const octx = ocCanvas.getContext('2d')!;
+    octx.fillStyle = '#78472a';
+    octx.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 4000; i++) {
+      octx.fillStyle = i % 2 === 0 ? 'rgba(255,220,180,0.06)' : 'rgba(30,15,5,0.08)';
+      octx.fillRect(Math.random() * 256, Math.random() * 256, 3, 3);
+    }
+    this.colonialOchreTex = new THREE.CanvasTexture(ocCanvas);
+
+    // 6. Aged Teak Wood & Crate Texture
     const wdCanvas = document.createElement('canvas');
     wdCanvas.width = 256;
     wdCanvas.height = 256;
@@ -292,7 +230,7 @@ export class MarketScene3D {
     }
     this.woodBarkTex = new THREE.CanvasTexture(wdCanvas);
 
-    // 6. Kanchipuram Maroon & Gold Zari Silk Texture
+    // 7. Kanchipuram Maroon & Gold Zari Silk Texture
     const silkCanvas = document.createElement('canvas');
     silkCanvas.width = 128;
     silkCanvas.height = 128;
@@ -301,27 +239,44 @@ export class MarketScene3D {
     kctx.fillRect(0, 0, 128, 128);
     kctx.fillStyle = '#f59e0b';
     kctx.fillRect(0, 96, 128, 24);
+    for (let x = 0; x < 128; x += 16) {
+      kctx.fillRect(x, 86, 8, 6);
+    }
     this.fabricSilkTex = new THREE.CanvasTexture(silkCanvas);
 
-    // 7. Authentic Bazaar Illuminated Signboard Texture
-    const signCanvas = document.createElement('canvas');
-    signCanvas.width = 512;
-    signCanvas.height = 128;
-    const nctx = signCanvas.getContext('2d')!;
-    nctx.fillStyle = '#140c08';
-    nctx.fillRect(0, 0, 512, 128);
-    nctx.strokeStyle = '#f59e0b';
-    nctx.lineWidth = 6;
-    nctx.strokeRect(6, 6, 500, 116);
-    nctx.fillStyle = '#fbbf24';
-    nctx.font = 'bold 34px sans-serif';
-    nctx.fillText('SRI MUTHUVEL BAZAAR & TEA', 22, 56);
-    nctx.fillStyle = '#fde68a';
-    nctx.font = 'bold 20px monospace';
-    nctx.fillText('MYLAPORE HERITAGE MARKET • CHENNAI', 26, 96);
-    this.neonSignTex = new THREE.CanvasTexture(signCanvas);
+    // 8. Handloom Cream Veshti with Gold Zari Border Texture
+    const vCanvas = document.createElement('canvas');
+    vCanvas.width = 128;
+    vCanvas.height = 128;
+    const vctx = vCanvas.getContext('2d')!;
+    vctx.fillStyle = '#f1f5f9';
+    vctx.fillRect(0, 0, 128, 128);
+    vctx.fillStyle = '#d97706';
+    vctx.fillRect(0, 104, 128, 18);
+    vctx.fillRect(108, 0, 12, 128);
+    this.veshtiFabricTex = new THREE.CanvasTexture(vCanvas);
 
-    // 8. Sunset Golden-Hour Sky & City Skyline Backdrop CanvasTexture
+    // 9. Storefront Signboards
+    this.neonSignTex = this.createSignboardTexture(
+      '#140c08',
+      '#f59e0b',
+      'SRI MUTHUVEL BAZAAR & TEA',
+      'MYLAPORE HERITAGE MARKET • EST 1978'
+    );
+    this.silkEmporiumSignTex = this.createSignboardTexture(
+      '#3b0712',
+      '#fbbf24',
+      'KANCHI SILK & JEWELLERY HOUSE',
+      '22K HALLMARK GOLD • BRIDAL SAREE EMPORIUM'
+    );
+    this.cinemaSignTex = this.createSignboardTexture(
+      '#091526',
+      '#38bdf8',
+      'PANDIAN TALKIES & CAFE',
+      'FILTER COFFEE • ROADSIDE TIFFIN CENTER'
+    );
+
+    // 10. Sunset Golden-Hour Sky & City Skyline Backdrop
     const skyCanvas = document.createElement('canvas');
     skyCanvas.width = 1024;
     skyCanvas.height = 512;
@@ -333,8 +288,6 @@ export class MarketScene3D {
     skyGrad.addColorStop(1, '#f59e0b');
     skctx.fillStyle = skyGrad;
     skctx.fillRect(0, 0, 1024, 512);
-
-    // Distant Gopuram & Suspension Bridge Silhouette on Horizon
     skctx.fillStyle = '#120907';
     for (let x = 0; x < 1024; x += 55) {
       const h = 60 + ((x * 37) % 130);
@@ -343,12 +296,60 @@ export class MarketScene3D {
     this.skyBackdropTex = new THREE.CanvasTexture(skyCanvas);
   }
 
+  private createSignboardTexture(bgHex: string, borderHex: string, title: string, subtitle: string): THREE.CanvasTexture {
+    const signCanvas = document.createElement('canvas');
+    signCanvas.width = 512;
+    signCanvas.height = 128;
+    const nctx = signCanvas.getContext('2d')!;
+    nctx.fillStyle = bgHex;
+    nctx.fillRect(0, 0, 512, 128);
+    nctx.strokeStyle = borderHex;
+    nctx.lineWidth = 6;
+    nctx.strokeRect(6, 6, 500, 116);
+    nctx.fillStyle = '#fbbf24';
+    nctx.font = 'bold 30px sans-serif';
+    nctx.fillText(title, 22, 56);
+    nctx.fillStyle = '#fde68a';
+    nctx.font = 'bold 19px monospace';
+    nctx.fillText(subtitle, 24, 96);
+    return new THREE.CanvasTexture(signCanvas);
+  }
+
+  // Subtle Floating Tactical Callsign Pill (Replaces giant 2D photo slabs)
+  private createTacticalFloatingBadge(text: string, accentHex: string): THREE.Sprite {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = 'rgba(9, 13, 22, 0.85)';
+    ctx.beginPath();
+    ctx.roundRect(8, 10, 240, 44, 12);
+    ctx.fill();
+    ctx.strokeStyle = accentHex;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = accentHex;
+    ctx.beginPath();
+    ctx.arc(30, 32, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = 'bold 20px monospace';
+    ctx.fillText(text, 46, 39);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(1.5, 0.38, 1);
+    return sprite;
+  }
+
   private initLights() {
-    this.ambientLight = new THREE.HemisphereLight(0xffd8a8, 0x1e1b18, 1.05);
+    this.ambientLight = new THREE.HemisphereLight(0xffd8a8, 0x1e1b18, 1.1);
     this.scene.add(this.ambientLight);
 
-    // Warm Golden-Hour Cinema Sun Light
-    this.sunLight = new THREE.DirectionalLight(0xffa94d, 2.2);
+    this.sunLight = new THREE.DirectionalLight(0xffa94d, 2.25);
     this.sunLight.position.set(-16, 24, 16);
     this.sunLight.castShadow = true;
     this.sunLight.shadow.mapSize.width = 2048;
@@ -362,7 +363,6 @@ export class MarketScene3D {
     this.sunLight.shadow.bias = -0.0004;
     this.scene.add(this.sunLight);
 
-    // Cool Teal Cinema Rim Backlight
     this.rimLight = new THREE.DirectionalLight(0x38bdf8, 0.85);
     this.rimLight.position.set(16, 14, -18);
     this.scene.add(this.rimLight);
@@ -386,7 +386,7 @@ export class MarketScene3D {
       this.environmentGroup.remove(this.environmentGroup.children[0]);
     }
 
-    // 0. Panoramic Golden-Hour Horizon Sky Dome Backdrop + Movie Poster Billboard
+    // Panoramic Sunset Horizon Sky Dome
     const skyDome = new THREE.Mesh(
       new THREE.CylinderGeometry(48, 48, 36, 32, 1, true, Math.PI * 0.55, Math.PI * 1.1),
       new THREE.MeshBasicMaterial({ map: this.skyBackdropTex, side: THREE.BackSide })
@@ -394,38 +394,7 @@ export class MarketScene3D {
     skyDome.position.set(0, 14, -10);
     this.environmentGroup.add(skyDome);
 
-    // Giant Cinema Hoarding Billboard overlooking the Bazaar (Authentic South Indian Cutout Hoarding Culture)
-    const posterTex = this.texLoader.load('/assets/portraits/poster.jpg');
-    posterTex.colorSpace = THREE.SRGBColorSpace;
-    const billboardGroup = new THREE.Group();
-    const boardFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(11.5, 6.8, 0.35),
-      new THREE.MeshStandardMaterial({ color: 0x18181b, metalness: 0.8, roughness: 0.3 })
-    );
-    boardFrame.position.y = 8.8;
-    billboardGroup.add(boardFrame);
-
-    const boardPoster = new THREE.Mesh(
-      new THREE.PlaneGeometry(11.0, 6.3),
-      new THREE.MeshBasicMaterial({ map: posterTex })
-    );
-    boardPoster.position.set(0, 8.8, 0.2);
-    billboardGroup.add(boardPoster);
-
-    // Steel truss legs for hoarding
-    for (const lx of [-4.2, 4.2]) {
-      const leg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.18, 0.22, 6.5, 10),
-        new THREE.MeshStandardMaterial({ color: 0x27272a, metalness: 0.8 })
-      );
-      leg.position.set(lx, 3.25, 0);
-      billboardGroup.add(leg);
-    }
-    billboardGroup.position.set(3.5, 0, -14.5);
-    billboardGroup.rotation.y = -0.18;
-    this.environmentGroup.add(billboardGroup);
-
-    // 1. Textured Wet Asphalt Street Surface with Specular Sheen
+    // 1. Textured Wet Asphalt Street Surface with Specular Puddles
     const groundGeo = new THREE.PlaneGeometry(80, 80);
     const groundMat = new THREE.MeshStandardMaterial({
       map: this.asphaltTex,
@@ -439,7 +408,6 @@ export class MarketScene3D {
     ground.receiveShadow = true;
     this.environmentGroup.add(ground);
 
-    // Reflective Wet Puddle Patches on Asphalt
     const puddleMat = new THREE.MeshStandardMaterial({
       color: 0x1e293b,
       roughness: 0.05,
@@ -502,15 +470,15 @@ export class MarketScene3D {
       this.environmentGroup.add(curbBlock);
     }
 
-    // 3. Dravidian Stone Temple Mandapam & Brass Deepam Pillar
-    this.buildTempleMandapam(-11.5, 0.35, 6.5);
+    // 3. Dravidian Stone Temple Mandapam & Gopuram Tower
+    this.buildTempleMandapam(-11.8, 0.35, 6.8);
 
-    // 4. Textured Colonial & Bazaar Shopfront Buildings
-    this.buildColonialShopfront(-13.2, 0.35, -5.5, true);
-    this.buildColonialShopfront(15.5, 0.35, -3.0, false);
-    this.buildColonialShopfront(15.5, 0.35, 9.0, false);
+    // 4. Multi-Story Detailed Colonial & Bazaar Shopfront Architecture (Pillared Verandas, Balconies, Shutters, Awnings)
+    this.buildDetailedHeritageBuilding(-13.4, 0.35, -5.5, this.neonSignTex, true, 0xb91c1c);
+    this.buildDetailedHeritageBuilding(15.2, 0.35, -3.5, this.silkEmporiumSignTex, false, 0xd97706);
+    this.buildDetailedHeritageBuilding(15.2, 0.35, 8.8, this.cinemaSignTex, false, 0x047857);
 
-    // 5. Authentic Indian Market Stalls with Produce, Spice Sacks & Brass Tea Samovar
+    // 5. Authentic Indian Market Stalls with Produce Crates, Spice Sacks & Brass Tea Samovar
     this.createDetailedMarketStall(-7.8, 0.35, -6.5, 0x991b1b, 'coconut_bazaar');
     this.createDetailedMarketStall(-7.8, 0.35, 1.5, 0x92400e, 'spice_silk');
     this.createDetailedMarketStall(-7.8, 0.35, 10.5, 0x065f46, 'tea_stall');
@@ -520,13 +488,13 @@ export class MarketScene3D {
     this.createCoconutPalm(11.5, 0.35, -10.5, 1.0);
     this.createCoconutPalm(12.0, 0.35, 14.5, 1.2);
 
-    // 7. Street Lamps & Overhead Lights
+    // 7. Street Lamps & Overhead Festival Lights
     this.createStreetLamp(2.5, 0, 4);
     this.createStreetLamp(-4.2, 0, -7);
     this.createStreetLamp(8.2, 0, 9);
     this.createOverheadCablesAndBunting();
 
-    // 8. Vimal's Premier Padmini Tourist Taxi with Vimal Photographic Portrait Badge
+    // 8. Vimal's Premier Padmini Tourist Taxi with 3D Vimal Driver Figure at Extraction Point
     this.buildVimalPremierTaxi(-1.5, 0, -10.5);
   }
 
@@ -567,14 +535,21 @@ export class MarketScene3D {
     roofBase.position.y = 4.6;
     temple.add(roofBase);
 
-    const gopuramTier1 = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.2, 4.8), stoneMat);
-    gopuramTier1.position.y = 5.5;
-    temple.add(gopuramTier1);
+    // Multi-tiered Carved Gopuram Pyramid Roof
+    for (let tier = 0; tier < 3; tier++) {
+      const tMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(4.4 - tier * 0.9, 0.95, 5.0 - tier * 0.9),
+        stoneMat
+      );
+      tMesh.position.y = 5.35 + tier * 0.95;
+      tMesh.castShadow = true;
+      temple.add(tMesh);
+    }
 
     const kalasamMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.15 });
-    for (const kz of [-1.2, 0, 1.2]) {
+    for (const kz of [-1.0, 0, 1.0]) {
       const kalasam = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.7, 14), kalasamMat);
-      kalasam.position.set(0, 6.45, kz);
+      kalasam.position.set(0, 8.15, kz);
       temple.add(kalasam);
     }
 
@@ -595,38 +570,130 @@ export class MarketScene3D {
     this.environmentGroup.add(temple);
   }
 
-  private buildColonialShopfront(x: number, y: number, z: number, hasSignboard: boolean) {
+  // Detailed Multi-Story South Indian Heritage Building (Pillared Arcade, Balcony Balustrades, Arched Windows, Storefront Awning)
+  private buildDetailedHeritageBuilding(
+    x: number,
+    y: number,
+    z: number,
+    signTex: THREE.CanvasTexture,
+    facingRight: boolean,
+    awningHex: number
+  ) {
     const bldg = new THREE.Group();
-    const wallMat = new THREE.MeshStandardMaterial({
+    const dir = facingRight ? 1 : -1;
+
+    const brickMat = new THREE.MeshStandardMaterial({
       map: this.brickFacadeTex,
       bumpMap: this.brickFacadeTex,
       bumpScale: 0.04,
       roughness: 0.78
     });
-    const trimMat = new THREE.MeshStandardMaterial({
+    const ochreMat = new THREE.MeshStandardMaterial({
+      map: this.colonialOchreTex,
+      roughness: 0.72
+    });
+    const stoneTrimMat = new THREE.MeshStandardMaterial({
       map: this.stoneTempleTex,
-      roughness: 0.7
+      roughness: 0.65
+    });
+    const woodMat = new THREE.MeshStandardMaterial({
+      map: this.woodBarkTex,
+      roughness: 0.75
     });
 
-    const mainBlock = new THREE.Mesh(new THREE.BoxGeometry(5.6, 8.8, 9.6), wallMat);
-    mainBlock.position.y = 4.4;
-    mainBlock.castShadow = true;
-    mainBlock.receiveShadow = true;
-    bldg.add(mainBlock);
+    // Ground Floor Storefront Volume
+    const groundFloor = new THREE.Mesh(new THREE.BoxGeometry(5.6, 4.2, 9.8), brickMat);
+    groundFloor.position.y = 2.1;
+    groundFloor.castShadow = true;
+    groundFloor.receiveShadow = true;
+    bldg.add(groundFloor);
 
-    const cornice = new THREE.Mesh(new THREE.BoxGeometry(6.1, 0.55, 10.1), trimMat);
-    cornice.position.y = 8.85;
+    // Upper Floor Colonial Volume
+    const upperFloor = new THREE.Mesh(new THREE.BoxGeometry(5.4, 4.4, 9.6), ochreMat);
+    upperFloor.position.y = 6.4;
+    upperFloor.castShadow = true;
+    upperFloor.receiveShadow = true;
+    bldg.add(upperFloor);
+
+    // Projecting First-Floor Veranda Balcony Slab + Carved Balustrade Railings
+    const balconySlab = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.32, 10.2), stoneTrimMat);
+    balconySlab.position.set(dir * 3.1, 4.25, 0);
+    balconySlab.castShadow = true;
+    bldg.add(balconySlab);
+
+    const balustradeRail = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.85, 10.0), stoneTrimMat);
+    balustradeRail.position.set(dir * 3.65, 4.8, 0);
+    bldg.add(balustradeRail);
+
+    // 4 Supporting Ground-Floor Veranda Columns
+    for (const cz of [-4.2, -1.4, 1.4, 4.2]) {
+      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 4.1, 14), stoneTrimMat);
+      pillar.position.set(dir * 3.55, 2.05, cz);
+      pillar.castShadow = true;
+      bldg.add(pillar);
+    }
+
+    // Sloped Storefront Canvas Awning over Ground Floor
+    const awning = new THREE.Mesh(
+      new THREE.BoxGeometry(1.6, 0.16, 9.4),
+      new THREE.MeshStandardMaterial({ color: awningHex, roughness: 0.55 })
+    );
+    awning.position.set(dir * 3.8, 3.35, 0);
+    awning.rotation.z = dir * -0.25;
+    awning.castShadow = true;
+    bldg.add(awning);
+
+    // Illuminated Storefront Signboard
+    const signBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(0.22, 1.25, 7.6),
+      new THREE.MeshBasicMaterial({ map: signTex })
+    );
+    signBoard.position.set(dir * 3.82, 4.85, 0);
+    bldg.add(signBoard);
+
+    // 3D Recessed Upper Windows with Wooden Frames, Arch Tops & Open Louvered Shutters
+    const warmGlassMat = new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.65,
+      roughness: 0.2
+    });
+    for (const wz of [-3.0, 0, 3.0]) {
+      const winGroup = new THREE.Group();
+
+      // Wooden outer frame
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.85, 1.35), woodMat);
+      winGroup.add(frame);
+
+      // Glowing glass pane
+      const pane = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.55, 1.05), warmGlassMat);
+      winGroup.add(pane);
+
+      // Left & Right Open Wooden Louvered Shutters
+      for (const side of [-0.78, 0.78]) {
+        const shutter = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.75, 0.42), woodMat);
+        shutter.position.set(dir * 0.1, 0, side);
+        shutter.rotation.y = side * dir * 0.35;
+        winGroup.add(shutter);
+      }
+
+      // Decorative Arch Lintel above window
+      const lintel = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.28, 1.55), stoneTrimMat);
+      lintel.position.set(0, 1.02, 0);
+      winGroup.add(lintel);
+
+      winGroup.position.set(dir * 2.72, 6.65, wz);
+      bldg.add(winGroup);
+    }
+
+    // Stepped Terracotta Roof Cornice & Parapet Wall
+    const cornice = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.5, 10.4), stoneTrimMat);
+    cornice.position.y = 8.75;
     bldg.add(cornice);
 
-    if (hasSignboard) {
-      const faceX = x < 0 ? 2.85 : -2.85;
-      const sign = new THREE.Mesh(
-        new THREE.BoxGeometry(0.22, 1.45, 7.2),
-        new THREE.MeshBasicMaterial({ map: this.neonSignTex })
-      );
-      sign.position.set(faceX, 3.8, 0);
-      bldg.add(sign);
-    }
+    const parapet = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.75, 10.0), brickMat);
+    parapet.position.y = 9.35;
+    bldg.add(parapet);
 
     bldg.position.set(x, y, z);
     this.environmentGroup.add(bldg);
@@ -645,6 +712,15 @@ export class MarketScene3D {
     table.receiveShadow = true;
     stall.add(table);
 
+    // Woven Wicker Baskets & Burlap Spice Sacks in front of stall
+    const sackMat = new THREE.MeshStandardMaterial({ color: 0xa16207, roughness: 0.9 });
+    for (let s = 0; s < 3; s++) {
+      const sack = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 0.65, 12), sackMat);
+      sack.position.set(1.85, 0.32, -1.1 + s * 1.1);
+      sack.castShadow = true;
+      stall.add(sack);
+    }
+
     const poleMat = new THREE.MeshStandardMaterial({ color: 0x27272a, metalness: 0.7, roughness: 0.35 });
     for (const [px, py, pz] of [
       [-1.4, 1.5, -1.9],
@@ -657,20 +733,38 @@ export class MarketScene3D {
       stall.add(p);
     }
 
-    const awning = new THREE.Mesh(
-      new THREE.BoxGeometry(3.6, 0.18, 4.6),
-      new THREE.MeshStandardMaterial({ color: canopyColor, roughness: 0.6 })
+    // Pitched Market Canopy Roof with Ridge Beam
+    const awningL = new THREE.Mesh(
+      new THREE.BoxGeometry(2.1, 0.14, 4.6),
+      new THREE.MeshStandardMaterial({ color: canopyColor, roughness: 0.55 })
     );
-    awning.position.y = 3.15;
-    awning.rotation.z = -0.12;
-    awning.castShadow = true;
-    stall.add(awning);
+    awningL.position.set(-0.85, 3.25, 0);
+    awningL.rotation.z = 0.28;
+    awningL.castShadow = true;
+    stall.add(awningL);
+
+    const awningR = new THREE.Mesh(
+      new THREE.BoxGeometry(2.1, 0.14, 4.6),
+      new THREE.MeshStandardMaterial({ color: canopyColor, roughness: 0.55 })
+    );
+    awningR.position.set(0.85, 3.25, 0);
+    awningR.rotation.z = -0.28;
+    awningR.castShadow = true;
+    stall.add(awningR);
+
+    // Warm Hanging Lantern inside Stall
+    const lantern = new THREE.Mesh(
+      new THREE.SphereGeometry(0.16, 10, 10),
+      new THREE.MeshBasicMaterial({ color: 0xfef08a })
+    );
+    lantern.position.set(0, 2.85, 0);
+    stall.add(lantern);
 
     if (type === 'coconut_bazaar') {
       const cocoMat = new THREE.MeshStandardMaterial({ color: 0x4d7c0f, roughness: 0.7 });
-      for (let i = 0; i < 9; i++) {
+      for (let i = 0; i < 12; i++) {
         const c = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 12), cocoMat);
-        c.position.set(-0.6 + (i % 3) * 0.52, 1.32 + Math.floor(i / 6) * 0.35, -0.8 + Math.floor(i / 3) * 0.55);
+        c.position.set(-0.65 + (i % 4) * 0.45, 1.32 + Math.floor(i / 8) * 0.35, -0.9 + Math.floor((i % 8) / 4) * 0.7);
         stall.add(c);
       }
     } else if (type === 'tea_stall') {
@@ -678,6 +772,16 @@ export class MarketScene3D {
       const boiler = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 0.95, 16), brassMat);
       boiler.position.set(0.4, 1.62, -0.5);
       stall.add(boiler);
+
+      // Tea glasses rack
+      for (let g = 0; g < 4; g++) {
+        const glass = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.08, 0.06, 0.22, 10),
+          new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.4, roughness: 0.1 })
+        );
+        glass.position.set(-0.4 + g * 0.22, 1.28, 0.65);
+        stall.add(glass);
+      }
     } else {
       const silkStack = new THREE.Mesh(
         new THREE.BoxGeometry(1.2, 0.45, 1.6),
@@ -769,7 +873,6 @@ export class MarketScene3D {
       );
       this.environmentGroup.add(line);
 
-      // Warm Glowing Festival String Bulbs along Overhead Wires
       for (let i = 2; i < 18; i += 3) {
         const pt = pts[i];
         const bulb = new THREE.Mesh(
@@ -782,6 +885,7 @@ export class MarketScene3D {
     }
   }
 
+  // Vimal's Premier Padmini Black-and-Yellow Tourist Taxi with Articulated 3D Vimal Driver
   private buildVimalPremierTaxi(x: number, y: number, z: number) {
     const taxi = new THREE.Group();
     const blackBodyMat = new THREE.MeshStandardMaterial({
@@ -823,16 +927,47 @@ export class MarketScene3D {
       taxi.add(hLight);
     }
 
-    // Vimal Photographic Standee Card above Taxi
-    const vimalStandee = this.createCharacterPortraitStandee(
-      '/assets/portraits/vimal.jpg',
-      'VIMAL // GETAWAY TAXI',
-      '#eab308',
-      1.35,
-      1.75
+    const roofSign = new THREE.Mesh(
+      new THREE.BoxGeometry(0.75, 0.24, 0.28),
+      new THREE.MeshBasicMaterial({ color: 0xfef08a })
     );
-    vimalStandee.position.set(0, 1.9, 0);
-    taxi.add(vimalStandee);
+    roofSign.position.set(0, 2.02, 0.2);
+    taxi.add(roofSign);
+
+    // 3D Vimal Getaway Driver standing beside the Premier Padmini Taxi in Tropical Goan Shirt
+    const vimalDriver = new THREE.Group();
+    const tropicalShirtMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.55 });
+    const vTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.26, 0.95, 14), tropicalShirtMat);
+    vTorso.position.y = 1.35;
+    vimalDriver.add(vTorso);
+
+    const vHead = new THREE.Mesh(
+      new THREE.SphereGeometry(0.24, 16, 16),
+      new THREE.MeshStandardMaterial({ color: 0xc68b59, roughness: 0.65 })
+    );
+    vHead.position.y = 2.05;
+    vimalDriver.add(vHead);
+
+    const vHair = new THREE.Mesh(
+      new THREE.SphereGeometry(0.26, 14, 14),
+      new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.85 })
+    );
+    vHair.position.set(0, 2.14, -0.04);
+    vimalDriver.add(vHair);
+
+    const vLegs = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.24, 0.22, 0.85, 12),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 })
+    );
+    vLegs.position.y = 0.45;
+    vimalDriver.add(vLegs);
+
+    vimalDriver.position.set(1.65, 0, 0.5);
+    taxi.add(vimalDriver);
+
+    const vimalBadge = this.createTacticalFloatingBadge('VIMAL // TAXI', '#eab308');
+    vimalBadge.position.set(0, 2.75, 0);
+    taxi.add(vimalBadge);
 
     taxi.position.set(x, y, z);
     taxi.rotation.y = 0.35;
@@ -859,60 +994,161 @@ export class MarketScene3D {
     this.scene.add(this.embers);
   }
 
-  // Photographic + Sculpted 3D Portrayal: "Tiger" Muthuvel Pandian
+  // Detailed Articulated 3D Model: "Tiger" Muthuvel Pandian (Superstar Rajinikanth in Jailer)
   private buildTigerCharacter() {
     this.tigerGroup = new THREE.Group();
 
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xc68b59, roughness: 0.55 });
+    const shirtMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.48 });
     const goldMat = new THREE.MeshStandardMaterial({
       color: 0xf59e0b,
-      metalness: 0.9,
-      roughness: 0.18
+      metalness: 0.92,
+      roughness: 0.15
     });
-    const shirtMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.55 });
 
-    // Golden Aura Pedestal Base under Tiger
-    const pedestal = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.85, 0.95, 0.14, 28),
-      new THREE.MeshStandardMaterial({ color: 0x18181b, metalness: 0.8, roughness: 0.25 })
-    );
-    pedestal.position.y = 0.07;
-    this.tigerGroup.add(pedestal);
-
+    // Subtle Ground Tactical Ring under Tiger's Feet
     const auraRing = new THREE.Mesh(
-      new THREE.RingGeometry(0.88, 1.05, 32),
+      new THREE.RingGeometry(0.68, 0.82, 32),
       new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide })
     );
     auraRing.rotation.x = -Math.PI / 2;
-    auraRing.position.y = 0.08;
+    auraRing.position.y = 0.04;
     this.tigerGroup.add(auraRing);
 
-    // High-Resolution Photographic Character Standee of Tiger Muthuvel Pandian
-    const tigerStandee = this.createCharacterPortraitStandee(
-      '/assets/portraits/tiger.jpg',
-      'TIGER PANDIAN',
-      '#f59e0b',
-      1.75,
-      2.45
-    );
-    tigerStandee.position.y = 0.1;
-    this.tigerGroup.add(tigerStandee);
-
-    // Keep articulated 3D glasses & torso references for Spectacle Flip & Attire animations
-    this.tigerTorsoMesh = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), shirtMat);
-    this.tigerTorsoMesh.visible = false;
+    // Sculpted Linen Shirt Torso + Shoulder Yoke + Open Collar
+    const torsoGeo = new THREE.CylinderGeometry(0.42, 0.36, 1.18, 18);
+    this.tigerTorsoMesh = new THREE.Mesh(torsoGeo, shirtMat);
+    this.tigerTorsoMesh.scale.set(1.15, 1.0, 0.72);
+    this.tigerTorsoMesh.position.y = 1.65;
+    this.tigerTorsoMesh.castShadow = true;
     this.tigerGroup.add(this.tigerTorsoMesh);
 
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.25, 14), skinMat);
+    neck.position.y = 2.28;
+    this.tigerGroup.add(neck);
+
+    // 24K Gold Chain Around Neck
+    const neckChain = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.025, 8, 20), goldMat);
+    neckChain.rotation.x = Math.PI / 2.2;
+    neckChain.position.set(0, 2.22, 0.08);
+    this.tigerGroup.add(neckChain);
+
+    // Sculpted Head & Jawline
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 24, 24), skinMat);
+    head.scale.set(0.94, 1.08, 0.98);
+    head.position.y = 2.6;
+    head.castShadow = true;
+    this.tigerGroup.add(head);
+
+    // Salt-and-Pepper Side-Swept Hair
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.8 });
+    const hairCrown = new THREE.Mesh(
+      new THREE.SphereGeometry(0.36, 20, 20, 0, Math.PI * 2, 0, Math.PI * 0.56),
+      hairMat
+    );
+    hairCrown.position.set(0, 2.66, -0.03);
+    this.tigerGroup.add(hairCrown);
+
+    // Groomed Silver Beard & Mustache
+    const beardMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.7 });
+    const beard = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.27, 0.2, 0.28, 16),
+      beardMat
+    );
+    beard.position.set(0, 2.42, 0.14);
+    this.tigerGroup.add(beard);
+
+    const mustache = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.075, 0.12), beardMat);
+    mustache.position.set(0, 2.51, 0.32);
+    this.tigerGroup.add(mustache);
+
+    // 24K Gold-Rimmed Aviator Sunglasses
     this.tigerGlassesGroup = new THREE.Group();
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 8, 20), goldMat);
-    this.tigerGlassesGroup.add(rim);
-    this.tigerGlassesGroup.position.set(0, 2.2, 0.15);
+    const lensMat = new THREE.MeshStandardMaterial({
+      color: 0x09090b,
+      metalness: 0.95,
+      roughness: 0.08
+    });
+    for (const lx of [-0.13, 0.13]) {
+      const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.095, 0.05, 16), lensMat);
+      lens.rotation.x = Math.PI / 2;
+      lens.position.set(lx, 0, 0);
+      this.tigerGlassesGroup.add(lens);
+
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.016, 8, 20), goldMat);
+      rim.position.set(lx, 0, 0.01);
+      this.tigerGlassesGroup.add(rim);
+    }
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.02, 0.02), goldMat);
+    bridge.position.set(0, 0.04, 0.02);
+    this.tigerGlassesGroup.add(bridge);
+
+    this.tigerGlassesGroup.position.set(0, 2.62, 0.33);
     this.tigerGroup.add(this.tigerGlassesGroup);
 
+    // Traditional Pleated Kanchipuram Silk Veshti with Gold Zari Border
+    const veshtiMat = new THREE.MeshStandardMaterial({
+      map: this.veshtiFabricTex,
+      roughness: 0.65
+    });
+    const veshti = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.48, 1.05, 20), veshtiMat);
+    veshti.position.y = 0.65;
+    veshti.castShadow = true;
+    this.tigerGroup.add(veshti);
+
+    // Articulated Arms with Rolled Cuffs, Forearms, Gold Chronograph Watch & Rudraksha Wrist Beads
     this.tigerArmL = new THREE.Group();
+    const sleeveL = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.115, 0.48, 14), shirtMat);
+    sleeveL.position.y = -0.2;
+    const forearmL = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.085, 0.45, 14), skinMat);
+    forearmL.position.y = -0.58;
+    const handL = new THREE.Mesh(new THREE.SphereGeometry(0.095, 12, 12), skinMat);
+    handL.position.y = -0.82;
+    const watch = new THREE.Mesh(new THREE.TorusGeometry(0.095, 0.022, 8, 16), goldMat);
+    watch.rotation.x = Math.PI / 2;
+    watch.position.y = -0.72;
+    this.tigerArmL.add(sleeveL, forearmL, handL, watch);
+    this.tigerArmL.position.set(-0.56, 2.12, 0);
+    this.tigerGroup.add(this.tigerArmL);
+
     this.tigerArmR = new THREE.Group();
+    const sleeveR = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.115, 0.48, 14), shirtMat);
+    sleeveR.position.y = -0.2;
+    const forearmR = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.085, 0.45, 14), skinMat);
+    forearmR.position.y = -0.58;
+    const handR = new THREE.Mesh(new THREE.SphereGeometry(0.095, 12, 12), skinMat);
+    handR.position.y = -0.82;
+    const rudraksha = new THREE.Mesh(
+      new THREE.TorusGeometry(0.095, 0.022, 8, 16),
+      new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.8 })
+    );
+    rudraksha.rotation.x = Math.PI / 2;
+    rudraksha.position.y = -0.72;
+    this.tigerArmR.add(sleeveR, forearmR, handR, rudraksha);
+    this.tigerArmR.position.set(0.56, 2.12, 0);
+    this.tigerGroup.add(this.tigerArmR);
+
+    // Articulated Legs & Leather Sandals
+    const sandalMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.7 });
     this.tigerLegL = new THREE.Group();
+    const ankleL = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.28, 12), skinMat);
+    ankleL.position.set(-0.18, 0.18, 0);
+    const footL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.4), sandalMat);
+    footL.position.set(-0.18, 0.05, 0.08);
+    this.tigerLegL.add(ankleL, footL);
+
     this.tigerLegR = new THREE.Group();
-    this.tigerGroup.add(this.tigerArmL, this.tigerArmR, this.tigerLegL, this.tigerLegR);
+    const ankleR = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.28, 12), skinMat);
+    ankleR.position.set(0.18, 0.18, 0);
+    const footR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.4), sandalMat);
+    footR.position.set(0.18, 0.05, 0.08);
+    this.tigerLegR.add(ankleR, footR);
+    this.tigerGroup.add(this.tigerLegL, this.tigerLegR);
+
+    // Clean Floating Tactical Callsign Pill above Tiger
+    const badge = this.createTacticalFloatingBadge('TIGER PANDIAN', '#f59e0b');
+    badge.position.set(0, 3.35, 0);
+    this.tigerGroup.add(badge);
 
     this.tigerGroup.position.set(-5.2, 0, 0.5);
     this.scene.add(this.tigerGroup);
@@ -928,26 +1164,87 @@ export class MarketScene3D {
     }
   }
 
-  // Photographic + Volumetric Vision Cone Portrayal: Viji
+  // Articulated 3D Model: Viji (Kanchipuram Maroon & Gold Silk Saree, Pallu Drape, Gold Jewelry, Jasmine Gajra)
   private buildVijiCharacter() {
     this.vijiGroup = new THREE.Group();
 
-    const pedestal = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.75, 0.85, 0.14, 24),
-      new THREE.MeshStandardMaterial({ color: 0x450a0a, metalness: 0.7, roughness: 0.3 })
-    );
-    pedestal.position.y = 0.07;
-    this.vijiGroup.add(pedestal);
+    const sareeMat = new THREE.MeshStandardMaterial({
+      map: this.fabricSilkTex,
+      roughness: 0.5
+    });
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      metalness: 0.9,
+      roughness: 0.2
+    });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xc68b59, roughness: 0.6 });
 
-    const vijiStandee = this.createCharacterPortraitStandee(
-      '/assets/portraits/viji.jpg',
-      'VIJI // PATROL',
-      '#e11d48',
-      1.55,
-      2.2
+    const sareeSkirt = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.56, 1.38, 20), sareeMat);
+    sareeSkirt.position.y = 0.69;
+    sareeSkirt.castShadow = true;
+    this.vijiGroup.add(sareeSkirt);
+
+    const blouse = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.36, 0.33, 0.66, 16),
+      new THREE.MeshStandardMaterial({ color: 0x7f1d1d, roughness: 0.55 })
     );
-    vijiStandee.position.y = 0.1;
-    this.vijiGroup.add(vijiStandee);
+    blouse.position.y = 1.66;
+    blouse.castShadow = true;
+    this.vijiGroup.add(blouse);
+
+    // Gold Zari Saree Pallu Sash draped diagonally across torso
+    const pallu = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.95, 0.44), sareeMat);
+    pallu.position.set(-0.08, 1.55, 0.02);
+    pallu.rotation.z = 0.25;
+    this.vijiGroup.add(pallu);
+
+    // Arms with Gold Bangles
+    for (const side of [-0.46, 0.46]) {
+      const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.72, 12), skinMat);
+      arm.position.set(side, 1.52, 0.08);
+      arm.rotation.z = side * -0.15;
+      this.vijiGroup.add(arm);
+
+      const bangle = new THREE.Mesh(new THREE.TorusGeometry(0.088, 0.02, 8, 16), goldMat);
+      bangle.rotation.x = Math.PI / 2;
+      bangle.position.set(side * 1.08, 1.25, 0.08);
+      this.vijiGroup.add(bangle);
+    }
+
+    const necklace = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.032, 8, 20), goldMat);
+    necklace.rotation.x = Math.PI / 2.2;
+    necklace.position.set(0, 1.96, 0.08);
+    this.vijiGroup.add(necklace);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 20, 20), skinMat);
+    head.position.y = 2.28;
+    head.castShadow = true;
+    this.vijiGroup.add(head);
+
+    const bindi = new THREE.Mesh(
+      new THREE.SphereGeometry(0.035, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xdc2626 })
+    );
+    bindi.position.set(0, 2.34, 0.29);
+    this.vijiGroup.add(bindi);
+
+    const bun = new THREE.Mesh(
+      new THREE.SphereGeometry(0.2, 14, 14),
+      new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.85 })
+    );
+    bun.position.set(0, 2.3, -0.24);
+    this.vijiGroup.add(bun);
+
+    const jasmine = new THREE.Mesh(
+      new THREE.TorusGeometry(0.21, 0.05, 10, 20),
+      new THREE.MeshStandardMaterial({ color: 0xfefce8, roughness: 0.4 })
+    );
+    jasmine.position.set(0, 2.3, -0.23);
+    this.vijiGroup.add(jasmine);
+
+    const vijiBadge = this.createTacticalFloatingBadge('VIJI // PATROL', '#f43f5e');
+    vijiBadge.position.set(0, 2.95, 0);
+    this.vijiGroup.add(vijiBadge);
 
     // Volumetric Vision Cone on the Street
     const coneGeo = new THREE.ConeGeometry(4.8, 9.5, 24, 1, true);
@@ -966,7 +1263,6 @@ export class MarketScene3D {
     this.scene.add(this.vijiGroup);
   }
 
-  // Detailed 3D Model: Chennai/Goa Green-and-Yellow Auto-Rickshaw
   private buildAutoRickshaw() {
     this.rickshawGroup = new THREE.Group();
 
@@ -1093,46 +1389,145 @@ export class MarketScene3D {
     this.scene.add(this.fireworksGroup);
   }
 
-  // Photographic + 3D Enforcer Portrayals for the 4 Syndicate Bike Thugs
+  // Detailed Articulated 3D Syndicate Bike Thugs + Realistic Street Motorcycles
   private buildThugs() {
     const thugConfigs = [
-      { pos: new THREE.Vector3(3.2, 0, 3.8), portrait: '/assets/portraits/narasimha.jpg', label: 'ENFORCER #1' },
-      { pos: new THREE.Vector3(5.2, 0, 4.8), portrait: '/assets/portraits/mathew.jpg', label: 'ENFORCER #2' },
-      { pos: new THREE.Vector3(2.8, 0, 6.4), portrait: '/assets/portraits/narasimha.jpg', label: 'ENFORCER #3' },
-      { pos: new THREE.Vector3(5.8, 0, 7.2), portrait: '/assets/portraits/mathew.jpg', label: 'SYNDICATE BOSS' }
+      { pos: new THREE.Vector3(3.2, 0, 3.8), jacketHex: 0x18181b, bikeHex: 0x991b1b, label: 'RAJA // BIKER' },
+      { pos: new THREE.Vector3(5.4, 0, 4.8), jacketHex: 0x3b0764, bikeHex: 0x1e3a8a, label: 'KUMAR // ENFORCER' },
+      { pos: new THREE.Vector3(2.8, 0, 6.4), jacketHex: 0x451a03, bikeHex: 0xb45309, label: 'MANI // BLADE' },
+      { pos: new THREE.Vector3(5.8, 0, 7.2), jacketHex: 0x090d16, bikeHex: 0x7f1d1d, label: 'SANGU // CAPTAIN' }
     ];
+
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xb07246, roughness: 0.65 });
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.92, roughness: 0.14 });
+    const tireMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.88 });
 
     thugConfigs.forEach((cfg) => {
       const group = new THREE.Group();
 
-      // Crimson Hostile Base Ring
+      // Subtle Hostile Tactical Reticle under Feet
       const baseRing = new THREE.Mesh(
-        new THREE.RingGeometry(0.7, 0.86, 24),
+        new THREE.RingGeometry(0.58, 0.72, 24),
         new THREE.MeshBasicMaterial({ color: 0xdc2626, side: THREE.DoubleSide })
       );
       baseRing.rotation.x = -Math.PI / 2;
-      baseRing.position.y = 0.05;
+      baseRing.position.y = 0.04;
       group.add(baseRing);
 
-      // Photographic Enforcer Standee
-      const standee = this.createCharacterPortraitStandee(
-        cfg.portrait,
-        cfg.label,
-        '#dc2626',
-        1.45,
-        2.05
+      // Sculpted Biker Leather Jacket Torso
+      const torso = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.38, 0.32, 1.12, 16),
+        new THREE.MeshStandardMaterial({ color: cfg.jacketHex, roughness: 0.42, metalness: 0.25 })
       );
-      standee.position.y = 0.08;
-      group.add(standee);
+      torso.scale.set(1.12, 1.0, 0.72);
+      torso.position.y = 1.55;
+      torso.castShadow = true;
+      group.add(torso);
 
-      // Detailed Street Motorcycle beside each Enforcer
-      const bikeFrame = new THREE.Mesh(
-        new THREE.BoxGeometry(0.42, 0.72, 1.65),
-        new THREE.MeshStandardMaterial({ color: 0x450a0a, metalness: 0.8, roughness: 0.25 })
+      // Sculpted Head, Beard Stubble, Dark Shades & Crimson Bandana
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.29, 18, 18), skinMat);
+      head.position.y = 2.35;
+      head.castShadow = true;
+      group.add(head);
+
+      const bandana = new THREE.Mesh(
+        new THREE.TorusGeometry(0.28, 0.055, 8, 18),
+        new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.5 })
       );
-      bikeFrame.position.set(-0.9, 0.55, 0);
-      bikeFrame.castShadow = true;
-      group.add(bikeFrame);
+      bandana.rotation.x = Math.PI / 2;
+      bandana.position.y = 2.48;
+      group.add(bandana);
+
+      const shades = new THREE.Mesh(
+        new THREE.BoxGeometry(0.42, 0.11, 0.1),
+        new THREE.MeshStandardMaterial({ color: 0x09090b, metalness: 0.9, roughness: 0.1 })
+      );
+      shades.position.set(0, 2.36, 0.26);
+      group.add(shades);
+
+      // Left & Right Articulated Arms + Curved Steel Aruval Machete
+      const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.75, 12), skinMat);
+      armL.position.set(-0.48, 1.62, 0);
+      armL.rotation.z = 0.18;
+      group.add(armL);
+
+      const armRGroup = new THREE.Group();
+      const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.75, 12), skinMat);
+      armR.position.y = -0.32;
+      armRGroup.add(armR);
+
+      // Curved Steel Aruval Machete in Right Hand
+      const macheteBlade = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.88, 0.15), chromeMat);
+      macheteBlade.position.set(0, -0.68, 0.35);
+      macheteBlade.rotation.x = 0.75;
+      armRGroup.add(macheteBlade);
+
+      armRGroup.position.set(0.48, 1.95, 0);
+      group.add(armRGroup);
+
+      // Legs & Combat Boots
+      for (const lx of [-0.17, 0.17]) {
+        const leg = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.13, 0.11, 0.88, 12),
+          new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 })
+        );
+        leg.position.set(lx, 0.52, 0);
+        leg.castShadow = true;
+        group.add(leg);
+      }
+
+      // Detailed 3D Royal Enfield-style Street Motorcycle parked beside Enforcer
+      const bike = new THREE.Group();
+      const wheelF = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.1, 12, 20), tireMat);
+      wheelF.rotation.y = Math.PI / 2;
+      wheelF.position.set(0, 0.42, 0.75);
+      bike.add(wheelF);
+
+      const wheelB = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.1, 12, 20), tireMat);
+      wheelB.rotation.y = Math.PI / 2;
+      wheelB.position.set(0, 0.42, -0.75);
+      bike.add(wheelB);
+
+      const fuelTank = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.24, 0.22, 0.78, 14),
+        new THREE.MeshStandardMaterial({ color: cfg.bikeHex, metalness: 0.75, roughness: 0.22 })
+      );
+      fuelTank.rotation.x = Math.PI / 2;
+      fuelTank.position.set(0, 0.92, 0.18);
+      bike.add(fuelTank);
+
+      const seat = new THREE.Mesh(
+        new THREE.BoxGeometry(0.34, 0.16, 0.75),
+        new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.7 })
+      );
+      seat.position.set(0, 0.82, -0.45);
+      bike.add(seat);
+
+      const forks = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.9, 10), chromeMat);
+      forks.position.set(0, 0.85, 0.62);
+      forks.rotation.x = -0.32;
+      bike.add(forks);
+
+      const handlebar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.75, 10), chromeMat);
+      handlebar.rotation.z = Math.PI / 2;
+      handlebar.position.set(0, 1.24, 0.48);
+      bike.add(handlebar);
+
+      const headlamp = new THREE.Mesh(
+        new THREE.SphereGeometry(0.14, 12, 12),
+        new THREE.MeshBasicMaterial({ color: 0xfef08a })
+      );
+      headlamp.position.set(0, 1.08, 0.76);
+      bike.add(headlamp);
+
+      bike.position.set(-0.95, 0, -0.15);
+      bike.rotation.y = 0.25;
+      group.add(bike);
+
+      // Clean Floating Tactical Badge
+      const thugBadge = this.createTacticalFloatingBadge(cfg.label, '#ef4444');
+      thugBadge.position.set(0, 2.95, 0);
+      group.add(thugBadge);
 
       group.position.copy(cfg.pos);
       this.scene.add(group);
@@ -1142,7 +1537,8 @@ export class MarketScene3D {
         alive: true,
         vel: new THREE.Vector3(),
         rotVel: new THREE.Vector3(),
-        initialPos: cfg.pos.clone()
+        initialPos: cfg.pos.clone(),
+        armR: armRGroup
       });
     });
   }
@@ -1154,10 +1550,10 @@ export class MarketScene3D {
     switch (levelId) {
       case 1:
       case 3:
-        this.scene.background = new THREE.Color(0x160d08);
-        this.scene.fog = new THREE.FogExp2(0x1c100b, 0.011);
+        this.scene.background = new THREE.Color(0x140c08);
+        this.scene.fog = new THREE.FogExp2(0x180e09, 0.011);
         this.sunLight.color.setHex(0xffa94d);
-        this.sunLight.intensity = 2.2;
+        this.sunLight.intensity = 2.25;
         soundManager.setTheme('stealth');
         break;
       case 4:
@@ -1207,7 +1603,7 @@ export class MarketScene3D {
       const beamMat = new THREE.LineBasicMaterial({ color: 0xff1e1e, linewidth: 2 });
       const pts = [
         new THREE.Vector3(thug.group.position.x - 11, 20, thug.group.position.z - 14),
-        thug.group.position.clone().add(new THREE.Vector3(0, 1.85, 0))
+        thug.group.position.clone().add(new THREE.Vector3(0, 2.2, 0))
       ];
       const beamGeo = new THREE.BufferGeometry().setFromPoints(pts);
       const beam = new THREE.Line(beamGeo, beamMat);
@@ -1309,8 +1705,16 @@ export class MarketScene3D {
   public update(delta: number, keys: { left: boolean; right: boolean; up: boolean; down: boolean }) {
     if (this.state.phase === 'VICTORY' || this.state.phase === 'BUSTED') return;
 
+    this.idleTime += delta;
     this.handleMovement(delta, keys);
     this.updateVijiPatrol(delta);
+
+    // Subtle idle machete sway on live thugs
+    this.thugs.forEach((thug, idx) => {
+      if (thug.alive) {
+        thug.armR.rotation.x = Math.sin(this.idleTime * 2.5 + idx) * 0.18;
+      }
+    });
 
     if (this.embers) {
       this.embers.rotation.y += delta * 0.06;
@@ -1395,7 +1799,11 @@ export class MarketScene3D {
     if (move.lengthSq() > 0) {
       move.normalize();
       this.tigerGroup.position.addScaledVector(move, speed * delta);
+      this.tigerGroup.rotation.y = Math.atan2(move.x, move.z);
+
       this.walkTime += delta * 8;
+      this.tigerArmL.rotation.x = Math.sin(this.walkTime) * 0.42;
+      this.tigerArmR.rotation.x = -Math.sin(this.walkTime) * 0.42;
       this.tigerGroup.position.y = Math.abs(Math.sin(this.walkTime)) * 0.09;
 
       this.footstepTimer += delta;
@@ -1404,6 +1812,8 @@ export class MarketScene3D {
         soundManager.playFootstep();
       }
     } else {
+      this.tigerArmL.rotation.x = 0;
+      this.tigerArmR.rotation.x = 0;
       this.tigerGroup.position.y = 0;
     }
   }

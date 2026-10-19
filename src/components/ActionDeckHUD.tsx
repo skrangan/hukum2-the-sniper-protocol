@@ -36,14 +36,11 @@ export const ActionDeckHUD: React.FC<ActionDeckHUDProps> = ({
       className="absolute bottom-5 right-5 z-30 flex flex-col items-end space-y-2.5 select-none"
       data-testid="action-deck-hud"
     >
-      {/* Dynamic Hover Inspection Tooltip */}
+      {/* Grounded Item Inspection Card on Hover */}
       {hoveredItem && (
-        <div className="w-80 bg-slate-950/95 backdrop-blur-xl border border-amber-500/40 rounded-2xl p-3.5 shadow-[0_10px_40px_rgba(0,0,0,0.9)] text-left animate-in fade-in slide-in-from-bottom-2 duration-150">
-          <div className="flex items-center justify-between text-[10px] font-mono text-amber-400 uppercase tracking-widest mb-1">
+        <div className="w-80 bg-stone-950/95 backdrop-blur-xl border border-amber-500/40 rounded-2xl p-3.5 shadow-[0_10px_40px_rgba(0,0,0,0.9)] text-left animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <div className="flex items-center justify-between text-[10px] text-amber-400 uppercase tracking-wider mb-1 font-bold">
             <span>{hoveredItem.code}</span>
-            <span className="px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/30">
-              {hoveredItem.rarity}
-            </span>
           </div>
           <div className="flex items-center space-x-2.5 mb-1.5">
             <img
@@ -60,23 +57,23 @@ export const ActionDeckHUD: React.FC<ActionDeckHUDProps> = ({
               </div>
             </div>
           </div>
-          <p className="text-[11px] text-slate-300 leading-snug mb-2">
+          <p className="text-[11px] text-stone-300 leading-snug mb-2">
             {hoveredItem.description}
           </p>
-          <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-800/80">
+          <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-stone-800/80">
             {hoveredItem.stats.slice(0, 2).map((st, idx) => (
-              <div key={idx} className="bg-slate-900/90 px-2 py-1 rounded-lg border border-slate-800">
-                <div className="text-[9px] text-slate-400 uppercase">{st.label}</div>
-                <div className="text-[11px] font-mono font-bold text-amber-300">{st.value}</div>
+              <div key={idx} className="bg-stone-900/90 px-2 py-1 rounded-lg border border-stone-800">
+                <div className="text-[9px] text-stone-400 uppercase">{st.label}</div>
+                <div className="text-[11px] font-bold text-amber-300">{st.value}</div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Tactical Inventory & Quick-Deploy Belt */}
-      <div className="bg-slate-950/90 backdrop-blur-xl p-2 rounded-2xl border border-amber-500/30 shadow-[0_10px_35px_rgba(0,0,0,0.85)] flex items-center space-x-2">
-        {/* Slot [1] Laser Overwatch */}
+      {/* Action & Allies Bar */}
+      <div className="bg-stone-950/92 backdrop-blur-xl p-2 rounded-2xl border border-amber-600/35 shadow-[0_10px_35px_rgba(0,0,0,0.85)] flex items-center space-x-2">
+        {/* Slot [1] Rooftop Snipers */}
         <button
           onClick={() => {
             soundManager.playSniperPing();
@@ -85,20 +82,20 @@ export const ActionDeckHUD: React.FC<ActionDeckHUDProps> = ({
           onMouseEnter={() => setHoveredItem(sniperItem)}
           onMouseLeave={() => setHoveredItem(null)}
           data-testid="slot-sniper-ping"
-          className="group relative flex items-center space-x-2 px-3 py-2 bg-slate-900/95 hover:bg-slate-800/90 active:scale-95 rounded-xl border border-red-500/30 hover:border-red-400 transition-all"
+          className="group relative flex items-center space-x-2 px-3 py-2 bg-stone-900/95 hover:bg-stone-800/90 active:scale-95 rounded-xl border border-red-500/30 hover:border-red-400 transition-all"
         >
           <div className="w-8 h-8 rounded-lg bg-red-950/80 border border-red-500/40 flex items-center justify-center text-red-400 group-hover:scale-105 transition">
             <Crosshair className="w-4 h-4" />
           </div>
           <div className="text-left">
             <div className="text-[9px] font-mono text-red-400 font-bold uppercase tracking-wider">
-              [1] OVERWATCH
+              [1] MARKSMEN
             </div>
-            <div className="text-xs font-black text-slate-100 leading-tight">Laser Lock</div>
+            <div className="text-xs font-black text-stone-100 leading-tight">Signal Snipers</div>
           </div>
         </button>
 
-        {/* Slot [2] Kinetic Hazard / Coconut & Auto Trigger */}
+        {/* Slot [2] Street Hazard / Coconut & Auto */}
         <button
           onClick={() => {
             if (onTaxiDrift) onTaxiDrift();
@@ -106,20 +103,20 @@ export const ActionDeckHUD: React.FC<ActionDeckHUDProps> = ({
           onMouseEnter={() => setHoveredItem(coconutItem)}
           onMouseLeave={() => setHoveredItem(null)}
           data-testid="slot-hazard-trigger"
-          className="group relative flex items-center space-x-2 px-3 py-2 bg-slate-900/95 hover:bg-slate-800/90 active:scale-95 rounded-xl border border-amber-500/30 hover:border-amber-400 transition-all"
+          className="group relative flex items-center space-x-2 px-3 py-2 bg-stone-900/95 hover:bg-stone-800/90 active:scale-95 rounded-xl border border-amber-500/30 hover:border-amber-400 transition-all"
         >
           <div className="w-8 h-8 rounded-lg bg-amber-950/80 border border-amber-500/40 flex items-center justify-center text-amber-400 group-hover:scale-105 transition">
             <Flame className="w-4 h-4" />
           </div>
           <div className="text-left">
             <div className="text-[9px] font-mono text-amber-400 font-bold uppercase tracking-wider">
-              [2] KINETIC TRAP
+              [2] STREET TRAP
             </div>
-            <div className="text-xs font-black text-slate-100 leading-tight">Rickshaw Trap</div>
+            <div className="text-xs font-black text-stone-100 leading-tight">Kick Coconut</div>
           </div>
         </button>
 
-        {/* Slot [3] Syndicate Cameo Summon */}
+        {/* Slot [3] Call Underworld Ally */}
         <button
           onClick={() => {
             soundManager.playCameoSummon();
@@ -128,9 +125,9 @@ export const ActionDeckHUD: React.FC<ActionDeckHUDProps> = ({
           onMouseEnter={() => setHoveredItem(cameoItem)}
           onMouseLeave={() => setHoveredItem(null)}
           data-testid="slot-cameo-summon"
-          className="group relative flex items-center space-x-2 px-3 py-2 bg-slate-900/95 hover:bg-slate-800/90 active:scale-95 rounded-xl border border-purple-500/30 hover:border-purple-400 transition-all"
+          className="group relative flex items-center space-x-2 px-3 py-2 bg-stone-900/95 hover:bg-stone-800/90 active:scale-95 rounded-xl border border-amber-500/30 hover:border-amber-400 transition-all"
         >
-          <div className="w-8 h-8 rounded-lg overflow-hidden border border-purple-400/50 bg-purple-950 flex-shrink-0">
+          <div className="w-8 h-8 rounded-lg overflow-hidden border border-amber-400/50 bg-stone-950 flex-shrink-0">
             <img
               src={cameoItem.portrait || '/assets/portraits/mathew.jpg'}
               alt={cameoItem.name}
@@ -138,20 +135,20 @@ export const ActionDeckHUD: React.FC<ActionDeckHUDProps> = ({
             />
           </div>
           <div className="text-left">
-            <div className="text-[9px] font-mono text-purple-300 font-bold uppercase tracking-wider">
-              [3] SYNDICATE
+            <div className="text-[9px] font-mono text-amber-300 font-bold uppercase tracking-wider">
+              [3] CALL ALLY
             </div>
-            <div className="text-xs font-black text-slate-100 leading-tight">
+            <div className="text-xs font-black text-stone-100 leading-tight">
               {cameoItem.id === 'narasimha_melee'
                 ? 'Narasimha'
                 : cameoItem.id === 'vimal_taxi'
                 ? 'Vimal Taxi'
-                : 'Mathew W123'}
+                : 'Mathew'}
             </div>
           </div>
         </button>
 
-        {/* Slot [I] Open Full Armory & Loadout Dossier */}
+        {/* Slot [I] Open Inventory & Allies */}
         {onOpenInventory && (
           <button
             onClick={() => {
@@ -160,18 +157,18 @@ export const ActionDeckHUD: React.FC<ActionDeckHUDProps> = ({
             }}
             data-testid="hud-open-inventory"
             className="flex items-center space-x-1.5 px-3 py-2 bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 rounded-xl border border-amber-500/40 text-amber-300 transition-all"
-            title="Open Tactical Inventory & Loadout [I]"
+            title="Open Inventory & Allies [I]"
           >
             <Briefcase className="w-4 h-4" />
             <div className="text-left hidden sm:block">
-              <div className="text-[9px] font-mono font-bold uppercase text-amber-400">[I] ARMORY</div>
+              <div className="text-[9px] font-mono font-bold uppercase text-amber-400">[I] BAG</div>
               <div className="text-xs font-black text-white leading-tight">Inventory</div>
             </div>
           </button>
         )}
       </div>
 
-      {/* Primary Spectacle Flip Button (24K Aviator Shades) */}
+      {/* Primary Spectacle Flip Button (Tiger Ka Hukum) */}
       <button
         onClick={onFlipSpecs}
         onMouseEnter={() => setHoveredItem(specsItem)}
@@ -180,12 +177,12 @@ export const ActionDeckHUD: React.FC<ActionDeckHUDProps> = ({
         data-testid="flip-specs-button"
         className={`group relative overflow-hidden px-6 py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider transition-all duration-300 shadow-2xl active:scale-95 ${
           isHukumMode
-            ? 'bg-red-950/95 border-2 border-red-500 text-red-300 shadow-[0_0_30px_rgba(239,68,68,0.5)] cursor-default'
-            : 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 hover:brightness-110 shadow-[0_0_30px_rgba(245,158,11,0.55)] border-2 border-yellow-200'
+            ? 'bg-red-950/95 border-2 border-red-500 text-red-200 shadow-[0_0_30px_rgba(239,68,68,0.5)] cursor-default'
+            : 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-stone-950 hover:brightness-110 shadow-[0_0_30px_rgba(245,158,11,0.55)] border-2 border-yellow-200'
         }`}
       >
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl overflow-hidden border-2 border-slate-950/40 shadow-md flex-shrink-0 bg-slate-950">
+          <div className="w-10 h-10 rounded-xl overflow-hidden border-2 border-stone-950/40 shadow-md flex-shrink-0 bg-stone-950">
             <img
               src="/assets/portraits/tiger.jpg"
               alt="Tiger Spectacle Flip"
@@ -194,10 +191,10 @@ export const ActionDeckHUD: React.FC<ActionDeckHUDProps> = ({
           </div>
           <div className="text-left">
             <div className="leading-none text-[10px] font-mono font-bold tracking-widest opacity-85">
-              {isHukumMode ? 'BULLET-TIME OVERWATCH ENGAGED' : 'OPT-01 // PRESS [SPACE]'}
+              {isHukumMode ? 'TIGER KA HUKUM • SNIPERS LOCKED' : 'PRESS [SPACE] • TIGER STYLE'}
             </div>
             <div className="text-base font-black tracking-wider font-display flex items-center space-x-1.5 mt-0.5">
-              <span>{isHukumMode ? 'HUKUM PROTOCOL (x10)' : 'FLIP AVIATOR SPECS'}</span>
+              <span>{isHukumMode ? 'HUKUM MODE (x10)' : 'FLIP AVIATOR SHADES'}</span>
               <Zap className="w-4 h-4 fill-current inline" />
             </div>
           </div>
