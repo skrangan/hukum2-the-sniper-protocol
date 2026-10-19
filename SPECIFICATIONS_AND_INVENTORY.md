@@ -154,7 +154,12 @@ CREATE INDEX IF NOT EXISTS idx_progress_user ON public.level_progress(user_id);
 - `VictoryModal.tsx`: Post-level summary showing stars, aura points, clear times, and PostgreSQL sync status.
 - `LeaderboardModal.tsx`: Live top 25 global rankings fetched directly from Render PostgreSQL.
 - `LevelSelectModal.tsx`: Interactive selector for Chapters 1 through 10.
-- `IntroVideoModal.tsx`: Cinematic 2.35:1 widescreen introduction video cutscene with character art and audio buildup.
+- `IntroVideoModal.tsx`: Cinematic 2.35:1 widescreen introduction prologue directly inspired by the official *Jailer* movie trailer:
+  - **Beat 1 ("The Deceptive Retirement")**: Viji speaks about how harmless and gentle Muthuvel Pandian is (*"Avar romba innocent... yaar koodayum sanda poda maattaru"*).
+  - **Beat 2 ("The Fatal Provocation")**: The crime syndicate foolishly targets the retired cop (*"Oru alavukku mela namma kitta pesave koodathu... aana ivan koodave ninnu pesuraan. Mudichu vidunga avana!"*).
+  - **Beat 3 ("The Monster Awakens")**: Tiger's chilling transformation and past revealed (*"Naan paatha velai vera... ippo paakura velai vera. Oru mudivu eduthutta, pinvaanga maatten"*).
+  - **Beat 4 ("The Pan-India Allies")**: Mathew (Mohanlal) and Narasimha (Shiva Rajkumar) declare their allegiance (*"Tiger sonna... thalaigal urulum. Ivide oru phone call vandhal, Chennai-ye ratha kaadaa maarum"*).
+  - **Beat 5 ("The Final Verdict")**: Anirudh bass drop and iconic title punchline (*"Alappara Kelapparom! Thambi... unna maadhiri ethanayo per-ah paathavan naan. HUKUM... TIGER KA HUKUM!"*).
 
 ---
 
