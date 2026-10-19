@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { soundManager } from '../audio/SoundManager';
 
+export type EnemyAIState = 'PATROL' | 'SUSPICIOUS' | 'ALERT' | 'AMBUSHED';
+
 export interface Game3DState {
   aura: number;
   multiplier: number;
@@ -11,6 +13,9 @@ export interface Game3DState {
   coconutKicked: boolean;
   rickshawRolling: boolean;
   fireworksExploded: boolean;
+  sniperStatus?: 'STANDBY' | 'LOCKED' | 'HOLD_FIRE_VIJI' | 'FIRING';
+  aiAlertCount?: number;
+  aliveEnemies?: number;
 }
 
 export class MarketScene3D {
@@ -33,10 +38,20 @@ export class MarketScene3D {
     rotVel: THREE.Vector3;
     initialPos: THREE.Vector3;
     armR: THREE.Group;
+    aiState: EnemyAIState;
+    awareness: number;
+    patrolWaypoints: THREE.Vector3[];
+    waypointIdx: number;
+    investigateTarget: THREE.Vector3 | null;
+    investigateTimer: number;
+    visionCone?: THREE.Mesh;
+    badgeSprite?: THREE.Sprite;
+    baseLabel: string;
   }[] = [];
   public sniperBeams: THREE.Line[] = [];
   public sniperReticles: THREE.Mesh[] = [];
   public fireworkParticles: { mesh: THREE.Mesh; vel: THREE.Vector3; life: number }[] = [];
+  public distractionRings: { mesh: THREE.Mesh; radius: number; maxRadius: number; life: number }[] = [];
   public embers: THREE.Points | null = null;
 
   // Lighting refs for dynamic chapter atmospheres
@@ -45,10 +60,25 @@ export class MarketScene3D {
   private rimLight!: THREE.DirectionalLight;
   private streetLights: THREE.PointLight[] = [];
 
-  // Vision Cone
+  // Vision Cone & Occlusion
   private vijiVisionMesh!: THREE.Mesh;
   private vijiAngle: number = 0;
   private vijiTurnTimer: number = 0;
+  private vijiDistractedTimer: number = 0;
+
+  // Tap-to-walk destination marker
+  private tapTarget: THREE.Vector3 | null = null;
+  private tapMarkerMesh: THREE.Mesh | null = null;
+
+  // Chapter-specific animated set-piece refs
+  private ch3SteamRing: THREE.Mesh | null = null;
+  private ch3SteamTimer: number = 0;
+  private ch4CraneContainer: THREE.Group | null = null;
+  private ch4DileepJeep: THREE.Group | null = null;
+  private ch5LazySusan: THREE.Group | null = null;
+  private ch5Chandelier: THREE.Group | null = null;
+  private ch6FerrisWheel: THREE.Group | null = null;
+  private ch9HeloGroup: THREE.Group | null = null;
 
   // State
   public state: Game3DState = {
@@ -60,7 +90,10 @@ export class MarketScene3D {
     phase: 'STEALTH',
     coconutKicked: false,
     rickshawRolling: false,
-    fireworksExploded: false
+    fireworksExploded: false,
+    sniperStatus: 'STANDBY',
+    aiAlertCount: 0,
+    aliveEnemies: 4
   };
 
   public currentLevelId: number = 1;
@@ -1535,13 +1568,30 @@ export class MarketScene3D {
       bike.rotation.y = 0.25;
       group.add(bike);
 
-      // Clean Floating Tactical Badge
-      const thugBadge = this.createTacticalFloatingBadge(cfg.label, '#ef4444');
+      // Directional Enemy AI Sight Cone on the Ground
+      const coneGeo = new THREE.ConeGeometry(2.4, 5.2, 16, 1, true);
+      const coneMat = new THREE.MeshBasicMaterial({
+        color: 0xeab308,
+        transparent: true,
+        opacity: 0.14,
+        side: THREE.DoubleSide
+      });
+      const visionCone = new THREE.Mesh(coneGeo, coneMat);
+      visionCone.rotation.x = -Math.PI / 2;
+      visionCone.position.set(0, 0.06, 2.6);
+      group.add(visionCone);
+
+      // Clean Floating Tactical Badge with Live AI State
+      const baseLabel = cfg.label.split(' // ')[0];
+      const thugBadge = this.createTacticalFloatingBadge(`${baseLabel} // PATROL`, '#ef4444');
       thugBadge.position.set(0, 2.95, 0);
       group.add(thugBadge);
 
       group.position.copy(cfg.pos);
       this.scene.add(group);
+
+      const p1 = cfg.pos.clone();
+      const p2 = cfg.pos.clone().add(new THREE.Vector3(-1.4, 0, 1.8));
 
       this.thugs.push({
         group,
@@ -1549,9 +1599,62 @@ export class MarketScene3D {
         vel: new THREE.Vector3(),
         rotVel: new THREE.Vector3(),
         initialPos: cfg.pos.clone(),
-        armR: armRGroup
+        armR: armRGroup,
+        aiState: 'PATROL',
+        awareness: 0,
+        patrolWaypoints: [p1, p2],
+        waypointIdx: 0,
+        investigateTarget: null,
+        investigateTimer: 0,
+        visionCone,
+        badgeSprite: thugBadge,
+        baseLabel
       });
     });
+  }
+
+  private updateThugBadge(thug: typeof this.thugs[0], nextState: EnemyAIState) {
+    if (thug.aiState === nextState && nextState !== 'AMBUSHED') return;
+    thug.aiState = nextState;
+
+    const accent =
+      nextState === 'ALERT'
+        ? '#ef4444'
+        : nextState === 'SUSPICIOUS'
+        ? '#f59e0b'
+        : nextState === 'AMBUSHED'
+        ? '#64748b'
+        : '#38bdf8';
+
+    const stateTag =
+      nextState === 'ALERT'
+        ? '! FLANKING'
+        : nextState === 'SUSPICIOUS'
+        ? '? INVESTIGATE'
+        : nextState === 'AMBUSHED'
+        ? 'DOWN'
+        : 'PATROL';
+
+    if (thug.badgeSprite) {
+      thug.group.remove(thug.badgeSprite);
+    }
+    const newBadge = this.createTacticalFloatingBadge(`${thug.baseLabel} // ${stateTag}`, accent);
+    newBadge.position.set(0, 2.95, 0);
+    thug.group.add(newBadge);
+    thug.badgeSprite = newBadge;
+
+    if (thug.visionCone) {
+      const mat = thug.visionCone.material as THREE.MeshBasicMaterial;
+      if (nextState === 'AMBUSHED') {
+        thug.visionCone.visible = false;
+      } else {
+        thug.visionCone.visible = true;
+        mat.color.setHex(
+          nextState === 'ALERT' ? 0xef4444 : nextState === 'SUSPICIOUS' ? 0xf97316 : 0xeab308
+        );
+        mat.opacity = nextState === 'ALERT' ? 0.26 : nextState === 'SUSPICIOUS' ? 0.2 : 0.13;
+      }
+    }
   }
 
   // --- Entity Builders: Vimal, Taxi, Moorthy Sir, SUVs, and Thugs ---
@@ -1899,9 +2002,31 @@ export class MarketScene3D {
     armL.position.set(-0.45, 1.4, 0);
     group.add(armL);
 
+    // Directional Enemy Sight Cone
+    const coneGeo = new THREE.ConeGeometry(2.2, 4.8, 14, 1, true);
+    const coneMat = new THREE.MeshBasicMaterial({
+      color: 0xeab308,
+      transparent: true,
+      opacity: 0.13,
+      side: THREE.DoubleSide
+    });
+    const visionCone = new THREE.Mesh(coneGeo, coneMat);
+    visionCone.rotation.x = -Math.PI / 2;
+    visionCone.position.set(0, 0.05, 2.4);
+    group.add(visionCone);
+
+    const idxNum = this.thugs.length + 1;
+    const baseLabel = `UNIT-0${idxNum}`;
+    const thugBadge = this.createTacticalFloatingBadge(`${baseLabel} // PATROL`, '#ef4444');
+    thugBadge.position.set(0, 2.75, 0);
+    group.add(thugBadge);
+
     group.position.set(x, y, z);
     group.rotation.y = rotY;
     this.chapterGroup.add(group);
+
+    const wp1 = new THREE.Vector3(x, y, z);
+    const wp2 = new THREE.Vector3(x + Math.sin(rotY) * 2.2, y, z + Math.cos(rotY) * 2.2);
 
     this.thugs.push({
       group,
@@ -1909,7 +2034,16 @@ export class MarketScene3D {
       vel: new THREE.Vector3(),
       rotVel: new THREE.Vector3(),
       initialPos: new THREE.Vector3(x, y, z),
-      armR
+      armR,
+      aiState: 'PATROL',
+      awareness: 0,
+      patrolWaypoints: [wp1, wp2],
+      waypointIdx: 0,
+      investigateTarget: null,
+      investigateTimer: 0,
+      visionCone,
+      badgeSprite: thugBadge,
+      baseLabel
     });
   }
 
@@ -2063,7 +2197,7 @@ export class MarketScene3D {
     }
   }
 
-  // --- Chapter 3: Highway Roadside Tea Stall ---
+  // --- Chapter 3: Palakkad Dusty Highway Roadside Tea Stall ---
   private buildChapter3TeaStall() {
     const groundMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.95 });
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), groundMat);
@@ -2089,13 +2223,39 @@ export class MarketScene3D {
     roof.position.set(0, 3.3, -4);
     this.chapterGroup.add(roof);
 
-    // Boiling Tea Kettle
+    // Boiling Brass Tea Samovar & Rhythm Steam Ring
     const kettleMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.2 });
-    const kettle = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 0.6, 16), kettleMat);
-    kettle.position.set(0, 1.3, -1.8);
+    const kettle = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.42, 0.75, 16), kettleMat);
+    kettle.position.set(0, 1.38, -1.8);
     this.chapterGroup.add(kettle);
 
-    // Position Tiger sitting/standing calmly
+    this.ch3SteamRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.4, 0.65, 24),
+      new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
+    );
+    this.ch3SteamRing.rotation.x = -Math.PI / 2;
+    this.ch3SteamRing.position.set(0, 1.85, -1.8);
+    this.chapterGroup.add(this.ch3SteamRing);
+
+    // Two Large Sugarcane Haulage Trucks Framing the Highway
+    for (const tx of [-10, 11]) {
+      const truck = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(6.5, 2.8, 2.6),
+        new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.6 })
+      );
+      body.position.y = 1.8;
+      const caneLoad = new THREE.Mesh(
+        new THREE.BoxGeometry(4.8, 1.6, 2.4),
+        new THREE.MeshStandardMaterial({ color: 0x65a30d, roughness: 0.9 })
+      );
+      caneLoad.position.set(-0.6, 3.4, 0);
+      truck.add(body, caneLoad);
+      truck.position.set(tx, 0, 11.5);
+      this.chapterGroup.add(truck);
+    }
+
+    // Position Tiger standing calmly by tea bench
     this.tigerGroup.position.set(-1.2, 0, -0.5);
     this.tigerGroup.rotation.set(0, 0, 0);
     this.isSpecsWorn = true;
@@ -2105,89 +2265,378 @@ export class MarketScene3D {
     }
 
     // Vimal's Taxi parked nearby
-    this.createVimalTaxi(-12, 0.4, 8);
+    this.createVimalTaxi(-12, 0.4, 7.5);
 
-    // 8 Syndicate Goons encircling the stall
-    for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * Math.PI * 1.5;
-      const gx = 6 * Math.cos(angle);
-      const gz = 3 + 5 * Math.sin(angle);
-      this.createThug(gx, 0.4, gz, -angle + Math.PI, 0x1e1b4b);
+    // 12 Syndicate Machete Goons sent by tracker Mukund
+    for (let i = 0; i < 12; i++) {
+      const angle = (i / 12) * Math.PI * 1.4 - 0.3;
+      const gx = 6.5 * Math.cos(angle);
+      const gz = 3.2 + 5.2 * Math.sin(angle);
+      this.createThug(gx, 0.4, gz, -angle + Math.PI, i % 2 === 0 ? 0x1e1b4b : 0x312e81);
     }
 
-    this.camera.position.set(-8, 4.5, 12);
+    this.camera.position.set(-8, 4.8, 12.5);
     this.camera.lookAt(0, 1.8, 0);
 
     if (this.onDialogue) this.onDialogue('lvl3_intro');
   }
 
-  // --- Chapter 4: Tunnel & Container Yard ---
+  // --- Chapter 4: Kochi Port Container Yard at Night (Monsoon Rain & Magnetic Crane) ---
   private buildChapter4Tunnel() {
-    const roadMat = new THREE.MeshStandardMaterial({ map: this.asphaltTex, roughness: 0.6 });
-    const road = new THREE.Mesh(new THREE.PlaneGeometry(140, 16), roadMat);
+    const roadMat = new THREE.MeshStandardMaterial({ map: this.asphaltTex, roughness: 0.35, metalness: 0.45 });
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(140, 48), roadMat);
     road.rotation.x = -Math.PI / 2;
     this.chapterGroup.add(road);
 
-    // Tunnel Arch Walls
-    const wallMat = new THREE.MeshStandardMaterial({ map: this.brickFacadeTex, color: 0x334155, roughness: 0.9 });
-    [-8.5, 8.5].forEach((wz) => {
-      const wall = new THREE.Mesh(new THREE.BoxGeometry(140, 12, 1), wallMat);
-      wall.position.set(0, 6, wz);
-      this.chapterGroup.add(wall);
-    });
-
-    // Sodium Yellow Light Posts
-    for (let x = -50; x <= 50; x += 25) {
-      const light = new THREE.PointLight(0xf59e0b, 2.5, 18);
-      light.position.set(x, 7.5, 0);
-      this.chapterGroup.add(light);
+    // Stacked Shipping Containers (3 Chola Idol Containers + Port Stacks)
+    const containerColors = [0x991b1b, 0x1e3a8a, 0x065f46, 0xd97706];
+    for (let i = 0; i < 6; i++) {
+      const cMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(6.2, 2.8, 2.6),
+        new THREE.MeshStandardMaterial({
+          color: containerColors[i % containerColors.length],
+          metalness: 0.6,
+          roughness: 0.45
+        })
+      );
+      cMesh.position.set(-10 + i * 7.5, 1.4, i % 2 === 0 ? -7.5 : 7.5);
+      cMesh.castShadow = true;
+      this.chapterGroup.add(cMesh);
     }
 
-    this.tigerGroup.position.set(-18, 0, 0);
+    // Towering Magnetic Gantry Crane & Suspended Trap Container
+    const steelMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.3 });
+    for (const gz of [-9, 9]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.9, 14, 0.9), steelMat);
+      leg.position.set(6, 7, gz);
+      this.chapterGroup.add(leg);
+    }
+    const bridgeBeam = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 20), steelMat);
+    bridgeBeam.position.set(6, 14, 0);
+    this.chapterGroup.add(bridgeBeam);
+
+    this.ch4CraneContainer = new THREE.Group();
+    const trapBox = new THREE.Mesh(
+      new THREE.BoxGeometry(5.6, 2.6, 2.5),
+      new THREE.MeshStandardMaterial({ color: 0xb91c1c, metalness: 0.65, roughness: 0.35 })
+    );
+    this.ch4CraneContainer.add(trapBox);
+    this.ch4CraneContainer.position.set(6, 8.2, 0);
+    this.chapterGroup.add(this.ch4CraneContainer);
+
+    // Dileep's Armored Jeep in the Container Lane
+    this.ch4DileepJeep = new THREE.Group();
+    const jeepBody = new THREE.Mesh(
+      new THREE.BoxGeometry(4.4, 1.6, 2.1),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.3 })
+    );
+    jeepBody.position.y = 1.0;
+    this.ch4DileepJeep.add(jeepBody);
+    const jeepBadge = this.createTacticalFloatingBadge('DILEEP // ARMORED JEEP', '#f59e0b');
+    jeepBadge.position.set(0, 2.8, 0);
+    this.ch4DileepJeep.add(jeepBadge);
+    this.ch4DileepJeep.position.set(6, 0, 0);
+    this.chapterGroup.add(this.ch4DileepJeep);
+
+    this.tigerGroup.position.set(-14, 0, 0);
     this.tigerGroup.rotation.set(0, Math.PI / 2, 0);
 
-    // Barricades & Armored Goons
-    for (let i = 0; i < 6; i++) {
-      this.createThug(4 + i * 2.5, 0.4, (i % 2 === 0 ? -2 : 2), -Math.PI / 2, 0x0f172a);
+    // 8 Port Enforcers
+    for (let i = 0; i < 8; i++) {
+      this.createThug(1 + i * 2.2, 0.4, i % 2 === 0 ? -2.8 : 2.8, -Math.PI / 2, 0x0f172a);
     }
 
-    this.camera.position.set(-25, 4.2, 8);
-    this.camera.lookAt(-10, 1.8, 0);
+    this.camera.position.set(-22, 5.2, 10);
+    this.camera.lookAt(0, 2.2, 0);
 
     if (this.onDialogue) this.onDialogue('lvl4_intro');
   }
 
-  // --- Chapter 5: Smuggler's Fortress Climax ---
+  // --- Chapter 5: Kantha Kalpak's Portuguese Mansion in Assagao, Goa ---
+  private buildChapter5Mansion() {
+    const floorMat = new THREE.MeshStandardMaterial({ map: this.cobblestoneTex, color: 0xfef3c7, roughness: 0.35 });
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 60), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    this.chapterGroup.add(floor);
+
+    // Colonial Arched Pillars
+    const ochreMat = new THREE.MeshStandardMaterial({ map: this.colonialOchreTex, roughness: 0.65 });
+    for (let x = -14; x <= 14; x += 7) {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.5, 8, 16), ochreMat);
+      col.position.set(x, 4, -8);
+      this.chapterGroup.add(col);
+    }
+
+    // Teak Dining Table & Rotating Lazy-Susan with Poisoned Cups + Silver Teapot
+    const table = new THREE.Mesh(
+      new THREE.CylinderGeometry(3.2, 3.0, 0.9, 24),
+      new THREE.MeshStandardMaterial({ map: this.woodBarkTex, roughness: 0.5 })
+    );
+    table.position.set(2, 0.45, 0);
+    this.chapterGroup.add(table);
+
+    this.ch5LazySusan = new THREE.Group();
+    const tray = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.8, 1.8, 0.12, 20),
+      new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.3 })
+    );
+    const silverTeapot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.35, 16, 16),
+      new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.98, roughness: 0.05 })
+    );
+    silverTeapot.position.y = 0.35;
+    this.ch5LazySusan.add(tray, silverTeapot);
+    for (let c = 0; c < 4; c++) {
+      const angle = (c / 4) * Math.PI * 2;
+      const cup = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.14, 0.1, 0.22, 12),
+        new THREE.MeshStandardMaterial({ color: c < 2 ? 0x10b981 : 0xfef08a })
+      );
+      cup.position.set(Math.cos(angle) * 1.2, 0.18, Math.sin(angle) * 1.2);
+      this.ch5LazySusan.add(cup);
+    }
+    this.ch5LazySusan.position.set(2, 0.96, 0);
+    this.chapterGroup.add(this.ch5LazySusan);
+
+    // Overhead Crystal Chandelier
+    this.ch5Chandelier = new THREE.Group();
+    const chanRing = new THREE.Mesh(
+      new THREE.TorusGeometry(1.6, 0.18, 12, 24),
+      new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xd97706, emissiveIntensity: 0.7 })
+    );
+    chanRing.rotation.x = Math.PI / 2;
+    this.ch5Chandelier.add(chanRing);
+    this.ch5Chandelier.position.set(2, 7.2, 0);
+    this.chapterGroup.add(this.ch5Chandelier);
+
+    this.tigerGroup.position.set(-8, 0, 0);
+    this.tigerGroup.rotation.set(0, Math.PI / 2, 0);
+
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      this.createThug(2 + Math.cos(a) * 4.5, 0.4, Math.sin(a) * 4.5, -a + Math.PI, 0x064e3b);
+    }
+
+    this.camera.position.set(-14, 5.5, 9.5);
+    this.camera.lookAt(1, 2.0, 0);
+    if (this.onDialogue) this.onDialogue('lvl5_intro');
+  }
+
+  // --- Chapter 6: Neon-Lit Panjim Goan Street Carnival & Ferris Wheel ---
+  private buildChapter6Carnival() {
+    const road = new THREE.Mesh(
+      new THREE.PlaneGeometry(100, 60),
+      new THREE.MeshStandardMaterial({ map: this.asphaltTex, roughness: 0.4 })
+    );
+    road.rotation.x = -Math.PI / 2;
+    this.chapterGroup.add(road);
+
+    // Illuminated Rotating Ferris Wheel
+    this.ch6FerrisWheel = new THREE.Group();
+    const wheelRim = new THREE.Mesh(
+      new THREE.TorusGeometry(6.5, 0.22, 12, 32),
+      new THREE.MeshBasicMaterial({ color: 0xe879f9 })
+    );
+    this.ch6FerrisWheel.add(wheelRim);
+    for (let s = 0; s < 8; s++) {
+      const spoke = new THREE.Mesh(
+        new THREE.BoxGeometry(13, 0.12, 0.12),
+        new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+      );
+      spoke.rotation.z = (s / 8) * Math.PI;
+      this.ch6FerrisWheel.add(spoke);
+    }
+    this.ch6FerrisWheel.position.set(8, 8.5, -10);
+    this.chapterGroup.add(this.ch6FerrisWheel);
+
+    // Vimal's Chrome-Hooded Taxi in the Parade Lane
+    this.createVimalTaxi(-4, 0.4, 2);
+
+    this.tigerGroup.position.set(-9, 0, 0);
+    this.tigerGroup.rotation.set(0, Math.PI / 2, 0);
+
+    // Bodhi's 8 Green-Laser Counter-Snipers & Enforcers
+    for (let i = 0; i < 8; i++) {
+      this.createThug(2 + (i % 4) * 3.0, 0.4, i < 4 ? -3.0 : 3.0, -Math.PI / 2, 0x581c87);
+    }
+
+    this.camera.position.set(-16, 5.2, 10);
+    this.camera.lookAt(0, 2.2, 0);
+    if (this.onDialogue) this.onDialogue('lvl6_intro');
+  }
+
+  // --- Chapter 7: Mysuru Fortified Safe House Compound Under Siege ---
+  private buildChapter7SafeHouse() {
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(100, 80),
+      new THREE.MeshStandardMaterial({ map: this.cobblestoneTex, roughness: 0.75 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    this.chapterGroup.add(ground);
+
+    // Safe House Bunker & 3 Armored Kalpak Breach Vans
+    const bunker = new THREE.Mesh(
+      new THREE.BoxGeometry(8, 4.5, 8),
+      new THREE.MeshStandardMaterial({ map: this.brickFacadeTex, roughness: 0.85 })
+    );
+    bunker.position.set(-10, 2.25, 0);
+    this.chapterGroup.add(bunker);
+
+    this.createArmoredSUV(4, 0.4, -4, -0.2);
+    this.createArmoredSUV(6, 0.4, 0, 0);
+    this.createArmoredSUV(4, 0.4, 4, 0.2);
+
+    this.tigerGroup.position.set(-5, 0, 0);
+    this.tigerGroup.rotation.set(0, Math.PI / 2, 0);
+
+    for (let i = 0; i < 10; i++) {
+      this.createThug(1 + (i % 5) * 2.4, 0.4, (i % 2 === 0 ? -1 : 1) * (1.8 + (i % 3)), -Math.PI / 2, 0x18181b);
+    }
+
+    this.camera.position.set(-14, 5.8, 11);
+    this.camera.lookAt(0, 2.0, 0);
+    if (this.onDialogue) this.onDialogue('lvl7_intro');
+  }
+
+  // --- Chapter 8: Chakri Kalpak's Luxury Casino Cruise Ship ("Bindaas" Deck) ---
+  private buildChapter8CruiseShip() {
+    const ocean = new THREE.Mesh(
+      new THREE.PlaneGeometry(180, 120),
+      new THREE.MeshStandardMaterial({ color: 0x0369a1, metalness: 0.9, roughness: 0.12 })
+    );
+    ocean.rotation.x = -Math.PI / 2;
+    ocean.position.y = -2.5;
+    this.chapterGroup.add(ocean);
+
+    const deck = new THREE.Mesh(
+      new THREE.BoxGeometry(36, 2.5, 18),
+      new THREE.MeshStandardMaterial({ map: this.woodBarkTex, roughness: 0.45 })
+    );
+    deck.position.set(0, -1.25, 0);
+    this.chapterGroup.add(deck);
+
+    // 3 Gold Idol Vault Doors on the Party Deck
+    for (const vz of [-4.5, 0, 4.5]) {
+      const vault = new THREE.Mesh(
+        new THREE.BoxGeometry(1.6, 3.2, 2.4),
+        new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.2 })
+      );
+      vault.position.set(10, 1.6, vz);
+      this.chapterGroup.add(vault);
+    }
+
+    this.tigerGroup.position.set(-8, 0, 0);
+    this.tigerGroup.rotation.set(0, Math.PI / 2, 0);
+
+    for (let i = 0; i < 10; i++) {
+      this.createThug(0 + (i % 5) * 2.2, 0.4, (i % 2 === 0 ? -3.2 : 3.2), -Math.PI / 2, 0x3b0764);
+    }
+
+    this.camera.position.set(-16, 5.6, 10);
+    this.camera.lookAt(2, 2.0, 0);
+    if (this.onDialogue) this.onDialogue('lvl8_intro');
+  }
+
+  // --- Chapter 9: Goa Dabolim Private Airstrip Runway at Sunset ---
+  private buildChapter9Airstrip() {
+    const tarmac = new THREE.Mesh(
+      new THREE.PlaneGeometry(160, 40),
+      new THREE.MeshStandardMaterial({ map: this.asphaltTex, roughness: 0.5 })
+    );
+    tarmac.rotation.x = -Math.PI / 2;
+    this.chapterGroup.add(tarmac);
+
+    // Center 360° Overwatch Circle (Tiger Refuses to Step Back)
+    const centerRing = new THREE.Mesh(
+      new THREE.RingGeometry(2.8, 3.2, 36),
+      new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide })
+    );
+    centerRing.rotation.x = -Math.PI / 2;
+    centerRing.position.set(-6, 0.04, 0);
+    this.chapterGroup.add(centerRing);
+
+    // Roddy's Tactical Helicopter Overhead
+    this.ch9HeloGroup = new THREE.Group();
+    const heloBody = new THREE.Mesh(
+      new THREE.BoxGeometry(4.5, 1.6, 1.8),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.25 })
+    );
+    const rotor = new THREE.Mesh(
+      new THREE.BoxGeometry(7.5, 0.08, 0.35),
+      new THREE.MeshBasicMaterial({ color: 0x94a3b8 })
+    );
+    rotor.position.y = 1.1;
+    this.ch9HeloGroup.add(heloBody, rotor);
+    this.ch9HeloGroup.position.set(-2, 9.5, -5);
+    this.chapterGroup.add(this.ch9HeloGroup);
+
+    this.createArmoredSUV(6, 0.4, -4.5, -0.15);
+    this.createArmoredSUV(8, 0.4, 4.5, 0.15);
+
+    this.tigerGroup.position.set(-6, 0, 0);
+    this.tigerGroup.rotation.set(0, Math.PI / 2, 0);
+
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      this.createThug(-6 + Math.cos(a) * 8.5, 0.4, Math.sin(a) * 6.5, -a + Math.PI, 0x1c1917);
+    }
+
+    this.camera.position.set(-16, 6.2, 12);
+    this.camera.lookAt(-4, 2.0, 0);
+    if (this.onDialogue) this.onDialogue('lvl9_intro');
+  }
+
+  // --- Chapter 10: Kalpak Cliffside Fortress Penthouse & Helipad ---
   private buildChapter5Climax() {
     const stoneMat = new THREE.MeshStandardMaterial({ map: this.stoneTempleTex, color: 0x1e293b, roughness: 0.95 });
-    const rampart = new THREE.Mesh(new THREE.BoxGeometry(120, 4, 30), stoneMat);
+    const rampart = new THREE.Mesh(new THREE.BoxGeometry(120, 4, 32), stoneMat);
     rampart.position.set(0, -2, 0);
     this.chapterGroup.add(rampart);
 
-    // Ocean Surface
+    // Glowing Helipad 'H' Circle
+    const helipadRing = new THREE.Mesh(
+      new THREE.RingGeometry(5.5, 6.0, 36),
+      new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide })
+    );
+    helipadRing.rotation.x = -Math.PI / 2;
+    helipadRing.position.set(6, 0.04, 0);
+    this.chapterGroup.add(helipadRing);
+
+    // Ocean Surface Below Cliff
     const oceanMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.9, roughness: 0.1 });
     const ocean = new THREE.Mesh(new THREE.PlaneGeometry(200, 100), oceanMat);
     ocean.rotation.x = -Math.PI / 2;
     ocean.position.set(0, -6, 45);
     this.chapterGroup.add(ocean);
 
-    this.tigerGroup.position.set(-12, 0, 0);
+    // Vimal's "Prison Van" Premier Padmini Taxi Ready for the 3 Kalpak Bosses
+    this.createVimalTaxi(-15, 0.4, 4.5);
+
+    this.tigerGroup.position.set(-10, 0, 0);
     this.tigerGroup.rotation.set(0, Math.PI / 2, 0);
 
-    for (let i = 0; i < 8; i++) {
-      this.createThug(2 + i * 3, 0.4, (Math.random() - 0.5) * 8, -Math.PI / 2, 0x18181b);
+    const bossLabels = ['KANTHA KALPAK // BOSS', 'BODHI KALPAK // BOSS', 'CHAKRI KALPAK // PATRIARCH'];
+    for (let i = 0; i < 10; i++) {
+      this.createThug(2 + (i % 5) * 2.5, 0.4, (i % 2 === 0 ? -2.8 : 2.8), -Math.PI / 2, i < 3 ? 0x7f1d1d : 0x18181b);
+      if (i < 3) {
+        const bThug = this.thugs[this.thugs.length - 1];
+        bThug.baseLabel = bossLabels[i].split(' // ')[0];
+        this.updateThugBadge(bThug, 'PATROL');
+      }
     }
 
-    this.camera.position.set(-20, 5, 10);
+    this.camera.position.set(-19, 5.5, 10.5);
     this.camera.lookAt(0, 2, 0);
 
-    if (this.onDialogue) this.onDialogue('lvl10_finale');
+    if (this.onDialogue) this.onDialogue('lvl10_intro');
   }
 
   // --- Load / Switch Chapter Cleanly ---
   public loadChapter(levelId: number) {
     this.currentLevelId = levelId;
     this.isExecutingShakeSequence = false;
+    this.vijiDistractedTimer = 0;
+    this.clearTapTarget();
 
     // Reset game state
     this.state = {
@@ -2199,7 +2648,10 @@ export class MarketScene3D {
       phase: 'STEALTH',
       coconutKicked: false,
       rickshawRolling: false,
-      fireworksExploded: false
+      fireworksExploded: false,
+      sniperStatus: 'STANDBY',
+      aiAlertCount: 0,
+      aliveEnemies: 4
     };
 
     // Clean up chapter-specific group
@@ -2214,9 +2666,11 @@ export class MarketScene3D {
     this.sniperReticles.forEach((r) => this.scene.remove(r));
     this.sniperReticles = [];
 
-    // Clean up particles
+    // Clean up particles & acoustic rings
     this.fireworkParticles.forEach((p) => this.scene.remove(p.mesh));
     this.fireworkParticles = [];
+    this.distractionRings.forEach((r) => this.scene.remove(r.mesh));
+    this.distractionRings = [];
 
     // Clean up thugs
     this.thugs.forEach((thug) => {
@@ -2230,6 +2684,13 @@ export class MarketScene3D {
     this.vimalTaxiGroup = null;
     this.moorthyGroup = null;
     this.moorthyCarGroup = null;
+    this.ch3SteamRing = null;
+    this.ch4CraneContainer = null;
+    this.ch4DileepJeep = null;
+    this.ch5LazySusan = null;
+    this.ch5Chandelier = null;
+    this.ch6FerrisWheel = null;
+    this.ch9HeloGroup = null;
 
     this.setChapterAtmosphere(levelId);
     this.startTime = Date.now();
@@ -2240,6 +2701,11 @@ export class MarketScene3D {
       this.rickshawGroup.visible = true;
       this.coconutMesh.visible = true;
       this.fireworksGroup.visible = true;
+
+      // Reset rickshaw & coconut positions
+      this.rickshawGroup.position.set(-1.0, 0, -2.2);
+      this.rickshawGroup.rotation.y = 0.4;
+      this.coconutMesh.position.set(-3.2, 0.42, -1.2);
 
       // Position Tiger in market
       this.tigerGroup.position.set(-5.2, 0, 0.5);
@@ -2269,11 +2735,22 @@ export class MarketScene3D {
         this.buildChapter3TeaStall();
       } else if (levelId === 4) {
         this.buildChapter4Tunnel();
+      } else if (levelId === 5) {
+        this.buildChapter5Mansion();
+      } else if (levelId === 6) {
+        this.buildChapter6Carnival();
+      } else if (levelId === 7) {
+        this.buildChapter7SafeHouse();
+      } else if (levelId === 8) {
+        this.buildChapter8CruiseShip();
+      } else if (levelId === 9) {
+        this.buildChapter9Airstrip();
       } else {
         this.buildChapter5Climax();
       }
     }
 
+    this.state.aliveEnemies = this.thugs.filter((t) => t.alive).length;
     this.notifyState();
   }
 
@@ -2474,19 +2951,42 @@ export class MarketScene3D {
     }, 2500);
   }
 
-  // --- Chapter 4 Sequence ---
+  // --- Chapter 4 Sequence: Drop Magnetic Crane Container & Hoist Dileep's Jeep ---
   private triggerChapter4TunnelSequence() {
     if (this.state.phase === 'VICTORY') return;
     this.state.hukumMode = true;
     this.state.phase = 'HUKUM';
+    this.state.multiplier = 10;
     soundManager.playCameoSummon();
     soundManager.playSniperVolley(6);
 
     if (this.onDialogue) this.onDialogue('lvl4_spec_flip');
 
+    // Drop magnetic crane container onto Dileep's jeep, then hoist both toward Madagascar ship!
+    if (this.ch4CraneContainer) {
+      let dropStep = 0;
+      const craneTimer = setInterval(() => {
+        dropStep += 1;
+        if (this.ch4CraneContainer) {
+          if (dropStep <= 15) {
+            this.ch4CraneContainer.position.y -= 0.42;
+          } else if (dropStep <= 45) {
+            this.ch4CraneContainer.position.y += 0.32;
+            if (this.ch4DileepJeep) {
+              this.ch4DileepJeep.position.y += 0.32;
+              this.ch4DileepJeep.rotation.z = Math.sin(dropStep * 0.3) * 0.12;
+            }
+          } else {
+            clearInterval(craneTimer);
+          }
+        }
+      }, 30);
+    }
+
     this.thugs.forEach((thug) => {
       if (thug.alive) {
         thug.alive = false;
+        this.updateThugBadge(thug, 'AMBUSHED');
         thug.vel.set(8 + Math.random() * 4, 6 + Math.random() * 4, (Math.random() - 0.5) * 6);
       }
     });
@@ -2498,27 +2998,83 @@ export class MarketScene3D {
     }, 2500);
   }
 
-  // --- Chapter 5 Climax Sequence ---
+  // --- Chapters 5 - 10 Set-Piece Sequences ---
   private triggerChapter5ClimaxSequence() {
     if (this.state.phase === 'VICTORY') return;
     this.state.hukumMode = true;
     this.state.phase = 'HUKUM';
+    this.state.multiplier = 10;
     soundManager.playSpecsShakeHit(2);
-    soundManager.playSniperVolley(10);
+    soundManager.playSniperVolley(this.currentLevelId === 10 ? 10 : 8);
 
-    if (this.onDialogue) this.onDialogue('lvl10_finale');
+    const specDialogueMap: Record<number, string> = {
+      5: 'lvl5_spec_flip',
+      6: 'lvl6_spec_flip',
+      7: 'lvl7_cameo_narasimha',
+      8: 'lvl8_spec_flip',
+      9: 'lvl9_spec_flip',
+      10: 'lvl10_finale'
+    };
+    const vicDialogueMap: Record<number, string> = {
+      5: 'lvl5_victory',
+      6: 'lvl6_victory',
+      7: 'lvl7_victory',
+      8: 'lvl8_victory',
+      9: 'lvl9_victory',
+      10: 'lvl10_victory'
+    };
 
+    if (this.onDialogue) {
+      this.onDialogue(specDialogueMap[this.currentLevelId] || 'lvl10_finale');
+    }
+
+    // Chapter 5: Spin Lazy-Susan 180° & Drop Crystal Chandelier via Teapot Laser Ricochet
+    if (this.currentLevelId === 5) {
+      let step = 0;
+      const ch5Interval = setInterval(() => {
+        step += 1;
+        if (this.ch5LazySusan) {
+          this.ch5LazySusan.rotation.y += 0.18;
+        }
+        if (this.ch5Chandelier && step > 10 && this.ch5Chandelier.position.y > 1.2) {
+          this.ch5Chandelier.position.y -= 0.45;
+        }
+        if (step >= 30) clearInterval(ch5Interval);
+      }, 25);
+    }
+
+    // Visual Laser Beams (Green reflected lasers in Ch 6, Red sniper lasers otherwise)
+    const beamColor = this.currentLevelId === 6 ? 0x10b981 : 0xff1e1e;
     this.thugs.forEach((thug) => {
       if (thug.alive) {
+        const beamMat = new THREE.LineBasicMaterial({ color: beamColor, linewidth: 2 });
+        const origin =
+          this.currentLevelId === 5
+            ? new THREE.Vector3(2, 1.3, 0) // Silver teapot ricochet
+            : this.currentLevelId === 6 && this.vimalTaxiGroup
+            ? this.vimalTaxiGroup.position.clone().add(new THREE.Vector3(0, 1.2, 0)) // Chrome taxi hood reflection
+            : new THREE.Vector3(thug.group.position.x - 14, 22, thug.group.position.z - 14);
+        const pts = [origin, thug.group.position.clone().add(new THREE.Vector3(0, 1.8, 0))];
+        const beam = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), beamMat);
+        this.scene.add(beam);
+        this.sniperBeams.push(beam);
+
         thug.alive = false;
-        thug.vel.set((Math.random() - 0.5) * 10, 14 + Math.random() * 8, (Math.random() - 0.5) * 10);
+        this.updateThugBadge(thug, 'AMBUSHED');
+        thug.vel.set((Math.random() - 0.5) * 10, 13 + Math.random() * 7, (Math.random() - 0.5) * 10);
+        thug.rotVel.set(Math.random() * 8, Math.random() * 8, Math.random() * 8);
       }
     });
 
+    soundManager.playExplosion();
+
     setTimeout(() => {
+      if (this.onDialogue) {
+        this.onDialogue(vicDialogueMap[this.currentLevelId] || 'lvl10_victory');
+      }
       soundManager.playJailerThemeVictory();
       this.triggerVictory();
-    }, 3000);
+    }, 2800);
   }
 
   public setChapterAtmosphere(levelId: number) {
@@ -2576,9 +3132,24 @@ export class MarketScene3D {
     this.sniperReticles.forEach((r) => this.scene.remove(r));
     this.sniperReticles = [];
 
+    // Realistic Sniper Fire-Discipline: Hold fire if Viji is watching the market crossing!
+    const vijiWatchingCrossing =
+      this.currentLevelId === 1 &&
+      this.vijiDistractedTimer <= 0 &&
+      this.state.vijiSuspicion > 35;
+
+    if (vijiWatchingCrossing && !this.state.hukumMode) {
+      this.state.sniperStatus = 'HOLD_FIRE_VIJI';
+      if (this.onDialogue) this.onDialogue('lvl1_hold_fire');
+    } else {
+      this.state.sniperStatus = 'LOCKED';
+    }
+
+    const beamHex = this.state.sniperStatus === 'HOLD_FIRE_VIJI' ? 0xf59e0b : 0xff1e1e;
+
     this.thugs.forEach((thug) => {
       if (!thug.alive) return;
-      const beamMat = new THREE.LineBasicMaterial({ color: 0xff1e1e, linewidth: 2 });
+      const beamMat = new THREE.LineBasicMaterial({ color: beamHex, linewidth: 2 });
       const pts = [
         new THREE.Vector3(thug.group.position.x - 11, 20, thug.group.position.z - 14),
         thug.group.position.clone().add(new THREE.Vector3(0, 2.2, 0))
@@ -2590,13 +3161,94 @@ export class MarketScene3D {
 
       const ret = new THREE.Mesh(
         new THREE.RingGeometry(0.65, 0.85, 24),
-        new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide })
+        new THREE.MeshBasicMaterial({ color: beamHex, side: THREE.DoubleSide })
       );
       ret.rotation.x = -Math.PI / 2;
       ret.position.copy(thug.group.position).add(new THREE.Vector3(0, 0.09, 0));
       this.scene.add(ret);
       this.sniperReticles.push(ret);
     });
+
+    this.notifyState();
+  }
+
+  // Acoustic Distraction [Q]: Rings Temple Bell / Whistle to redirect Viji's LOS & lure enemy AI
+  public triggerDistraction() {
+    soundManager.playAlert();
+
+    const origin =
+      this.currentLevelId === 1
+        ? new THREE.Vector3(-10.5, 0.15, 6.8) // Dravidian Temple Mandapam Bell
+        : this.tigerGroup.position.clone().add(new THREE.Vector3(3.0, 0.15, 0));
+
+    // Expanding 3D Acoustic Ripple Ring
+    const ringGeo = new THREE.RingGeometry(0.4, 0.65, 32);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.9
+    });
+    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+    ringMesh.rotation.x = -Math.PI / 2;
+    ringMesh.position.copy(origin);
+    this.scene.add(ringMesh);
+    this.distractionRings.push({ mesh: ringMesh, radius: 1, maxRadius: 12, life: 1.2 });
+
+    // Redirect Viji's gaze toward the temple shrine for 6.5 seconds & drop suspicion
+    if (this.currentLevelId === 1 && this.vijiGroup) {
+      this.vijiDistractedTimer = 6.5;
+      this.vijiAngle = -Math.PI / 2; // Looks away from street toward temple shrine
+      this.vijiGroup.rotation.y = this.vijiAngle;
+      this.state.vijiSuspicion = Math.max(0, this.state.vijiSuspicion - 45);
+      this.state.sniperStatus = 'LOCKED';
+      if (this.onDialogue) this.onDialogue('lvl1_viji_distracted');
+    }
+
+    // Lure live enemies within 16m into SUSPICIOUS / INVESTIGATING state toward the trap lane
+    const lurePoint =
+      this.currentLevelId === 1
+        ? new THREE.Vector3(3.8, 0, 5.2) // Right in the Bajaj rickshaw's roll path
+        : origin.clone();
+
+    this.thugs.forEach((thug) => {
+      if (!thug.alive) return;
+      thug.awareness = Math.max(45, thug.awareness);
+      thug.investigateTarget = lurePoint.clone().add(
+        new THREE.Vector3((Math.random() - 0.5) * 1.5, 0, (Math.random() - 0.5) * 1.5)
+      );
+      thug.investigateTimer = 5.0;
+      this.updateThugBadge(thug, 'SUSPICIOUS');
+    });
+
+    this.state.aura += 450 * this.state.multiplier;
+    this.notifyState();
+  }
+
+  public setTapTarget(pt: THREE.Vector3) {
+    this.tapTarget = new THREE.Vector3(
+      Math.max(-24, Math.min(24, pt.x)),
+      0,
+      Math.max(-18, Math.min(18, pt.z))
+    );
+
+    if (!this.tapMarkerMesh) {
+      this.tapMarkerMesh = new THREE.Mesh(
+        new THREE.RingGeometry(0.35, 0.52, 24),
+        new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide })
+      );
+      this.tapMarkerMesh.rotation.x = -Math.PI / 2;
+      this.scene.add(this.tapMarkerMesh);
+    }
+    this.tapMarkerMesh.visible = true;
+    this.tapMarkerMesh.position.set(this.tapTarget.x, 0.05, this.tapTarget.z);
+  }
+
+  public clearTapTarget() {
+    this.tapTarget = null;
+    if (this.tapMarkerMesh) {
+      this.tapMarkerMesh.visible = false;
+    }
   }
 
   public summonCameo(cameoId: string = 'mathew_mercedes') {
@@ -2606,12 +3258,14 @@ export class MarketScene3D {
     if (this.onDialogue) {
       if (cameoId === 'narasimha_melee') {
         this.onDialogue('lvl7_cameo_narasimha');
+      } else if (cameoId === 'roddy_helo') {
+        this.onDialogue('lvl9_spec_flip');
       } else {
         this.onDialogue('lvl7_cameo_mathew');
       }
     }
 
-    if (!this.state.coconutKicked) {
+    if (this.currentLevelId === 1 && !this.state.coconutKicked) {
       this.kickCoconut();
     } else if (!this.state.hukumMode) {
       this.triggerSpectacleFlip();
@@ -2620,6 +3274,10 @@ export class MarketScene3D {
   }
 
   public kickCoconut() {
+    if (this.currentLevelId !== 1) {
+      this.triggerSpectacleFlip();
+      return;
+    }
     if (this.state.coconutKicked) return;
     this.state.coconutKicked = true;
 
@@ -2673,6 +3331,7 @@ export class MarketScene3D {
     this.state.hukumMode = true;
     this.state.phase = 'HUKUM';
     this.state.multiplier = 10;
+    this.state.sniperStatus = 'FIRING';
 
     soundManager.playSpectacleFlipBassDrop();
 
@@ -2690,23 +3349,56 @@ export class MarketScene3D {
 
     this.pingSniperTargets();
 
+    // If coconut hasn't been kicked yet in Ch 1, kick it automatically so Hukum mode triggers the full chain reaction!
+    if (!this.state.coconutKicked) {
+      setTimeout(() => {
+        this.kickCoconut();
+      }, 350);
+    }
+
     if (this.onDialogue) this.onDialogue('lvl1_spec_flip');
     this.notifyState();
   }
 
-  public update(delta: number, keys: { left: boolean; right: boolean; up: boolean; down: boolean }) {
+  public update(
+    delta: number,
+    keys: { left: boolean; right: boolean; up: boolean; down: boolean },
+    touchVector: { x: number; z: number } = { x: 0, z: 0 }
+  ) {
     if (this.state.phase === 'VICTORY' || this.state.phase === 'BUSTED') return;
 
     this.idleTime += delta;
-    this.handleMovement(delta, keys);
+    this.handleMovement(delta, keys, touchVector);
     this.updateVijiPatrol(delta);
+    this.updateEnemyAI(delta);
 
-    // Subtle idle machete sway on live thugs
-    this.thugs.forEach((thug, idx) => {
-      if (thug.alive) {
-        thug.armR.rotation.x = Math.sin(this.idleTime * 2.5 + idx) * 0.18;
+    // Chapter-specific ambient animations (Ch 3 steam kettle, Ch 6 Ferris wheel, Ch 9 helicopter rotor)
+    if (this.currentLevelId === 3 && this.ch3SteamRing) {
+      this.ch3SteamTimer = (this.ch3SteamTimer + delta) % 4.0;
+      const scale = 1 + (this.ch3SteamTimer / 4.0) * 2.5;
+      this.ch3SteamRing.scale.set(scale, scale, 1);
+    }
+    if (this.currentLevelId === 6 && this.ch6FerrisWheel) {
+      this.ch6FerrisWheel.rotation.z += delta * 0.35;
+    }
+    if (this.currentLevelId === 9 && this.ch9HeloGroup) {
+      this.ch9HeloGroup.position.y = 9.5 + Math.sin(this.idleTime * 3) * 0.35;
+      const rotor = this.ch9HeloGroup.children[1];
+      if (rotor) rotor.rotation.y += delta * 18;
+    }
+
+    // Expand & fade acoustic distraction rings
+    for (let i = this.distractionRings.length - 1; i >= 0; i--) {
+      const r = this.distractionRings[i];
+      r.life -= delta;
+      const s = 1 + (1.2 - r.life) * 8;
+      r.mesh.scale.set(s, s, 1);
+      (r.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, r.life / 1.2);
+      if (r.life <= 0) {
+        this.scene.remove(r.mesh);
+        this.distractionRings.splice(i, 1);
       }
-    });
+    }
 
     if (this.embers) {
       this.embers.rotation.y += delta * 0.06;
@@ -2720,8 +3412,9 @@ export class MarketScene3D {
       this.thugs.forEach((thug) => {
         if (thug.alive) {
           const dist = this.rickshawGroup.position.distanceTo(thug.group.position);
-          if (dist < 2.6) {
+          if (dist < 2.8) {
             thug.alive = false;
+            this.updateThugBadge(thug, 'AMBUSHED');
             soundManager.playSniperShot();
             this.state.aura += 1250 * this.state.multiplier;
 
@@ -2748,7 +3441,7 @@ export class MarketScene3D {
         thug.group.rotation.y += thug.rotVel.y * delta;
         thug.vel.y -= 25 * delta;
 
-        if (thug.group.position.y < 0.2) {
+        if (thug.group.position.y < 0.2 && this.currentLevelId !== 2) {
           thug.group.position.y = 0.2;
           thug.vel.set(0, 0, 0);
           thug.rotVel.set(0, 0, 0);
@@ -2802,7 +3495,93 @@ export class MarketScene3D {
     }
   }
 
-  private handleMovement(delta: number, keys: { left: boolean; right: boolean; up: boolean; down: boolean }) {
+  // Intelligent Enemy AI State Machine: PATROL -> SUSPICIOUS -> ALERT -> AMBUSHED
+  private updateEnemyAI(delta: number) {
+    let alertCount = 0;
+    let aliveCount = 0;
+
+    this.thugs.forEach((thug, idx) => {
+      if (!thug.alive) return;
+      aliveCount++;
+
+      // Subtle machete idle sway
+      thug.armR.rotation.x = Math.sin(this.idleTime * 2.5 + idx) * 0.18;
+
+      if (this.state.hukumMode) return;
+
+      // 1. Check line-of-sight to Tiger
+      const toTiger = this.tigerGroup.position.clone().sub(thug.group.position);
+      toTiger.y = 0;
+      const distToTiger = toTiger.length();
+      const forward = new THREE.Vector3(0, 0, 1).applyAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        thug.group.rotation.y
+      );
+      const dot = distToTiger > 0.01 ? forward.dot(toTiger.clone().normalize()) : 0;
+
+      if (distToTiger < 6.5 && dot > 0.45) {
+        thug.awareness = Math.min(100, thug.awareness + 38 * delta);
+      } else {
+        thug.awareness = Math.max(0, thug.awareness - 12 * delta);
+      }
+
+      // 2. State transitions & movement
+      if (thug.awareness >= 75) {
+        this.updateThugBadge(thug, 'ALERT');
+        alertCount++;
+        // Flank toward Tiger & erode composure slightly
+        if (distToTiger > 1.8) {
+          const dir = toTiger.normalize();
+          thug.group.position.addScaledVector(dir, 2.2 * delta);
+          thug.group.rotation.y = Math.atan2(dir.x, dir.z);
+        }
+        this.state.composure = Math.max(25, this.state.composure - 4 * delta);
+      } else if (thug.investigateTimer > 0 && thug.investigateTarget) {
+        thug.investigateTimer -= delta;
+        this.updateThugBadge(thug, 'SUSPICIOUS');
+        alertCount++;
+        const toTarget = thug.investigateTarget.clone().sub(thug.group.position);
+        toTarget.y = 0;
+        if (toTarget.length() > 0.6) {
+          const dir = toTarget.normalize();
+          thug.group.position.addScaledVector(dir, 1.55 * delta);
+          thug.group.rotation.y = Math.atan2(dir.x, dir.z);
+        }
+        if (thug.investigateTimer <= 0) {
+          thug.investigateTarget = null;
+          this.updateThugBadge(thug, 'PATROL');
+        }
+      } else if (thug.awareness >= 35) {
+        this.updateThugBadge(thug, 'SUSPICIOUS');
+        alertCount++;
+        thug.group.rotation.y = Math.atan2(toTiger.x, toTiger.z);
+      } else {
+        this.updateThugBadge(thug, 'PATROL');
+        // Patrol smoothly between waypoints in Chapter 1
+        if (this.currentLevelId === 1 && thug.patrolWaypoints.length >= 2) {
+          const wp = thug.patrolWaypoints[thug.waypointIdx];
+          const toWp = wp.clone().sub(thug.group.position);
+          toWp.y = 0;
+          if (toWp.length() < 0.35) {
+            thug.waypointIdx = (thug.waypointIdx + 1) % thug.patrolWaypoints.length;
+          } else {
+            const dir = toWp.normalize();
+            thug.group.position.addScaledVector(dir, 0.85 * delta);
+            thug.group.rotation.y = Math.atan2(dir.x, dir.z);
+          }
+        }
+      }
+    });
+
+    this.state.aiAlertCount = alertCount;
+    this.state.aliveEnemies = aliveCount;
+  }
+
+  private handleMovement(
+    delta: number,
+    keys: { left: boolean; right: boolean; up: boolean; down: boolean },
+    touchVector: { x: number; z: number } = { x: 0, z: 0 }
+  ) {
     const speed = this.state.hukumMode ? 3.5 : 5.5;
     const move = new THREE.Vector3();
 
@@ -2811,8 +3590,21 @@ export class MarketScene3D {
     if (keys.up) move.z -= 1;
     if (keys.down) move.z += 1;
 
+    if (Math.abs(touchVector.x) > 0.05 || Math.abs(touchVector.z) > 0.05) {
+      move.x += touchVector.x;
+      move.z += touchVector.z;
+    } else if (move.lengthSq() === 0 && this.tapTarget) {
+      const toTap = this.tapTarget.clone().sub(this.tigerGroup.position);
+      toTap.y = 0;
+      if (toTap.length() < 0.35) {
+        this.clearTapTarget();
+      } else {
+        move.copy(toTap.normalize());
+      }
+    }
+
     if (move.lengthSq() > 0) {
-      move.normalize();
+      if (move.length() > 1) move.normalize();
       this.tigerGroup.position.addScaledVector(move, speed * delta);
       this.tigerGroup.rotation.y = Math.atan2(move.x, move.z);
 
@@ -2833,14 +3625,31 @@ export class MarketScene3D {
     }
   }
 
+  // Checks if market stalls or the auto-rickshaw block Viji's line-of-sight to Tiger
+  private isTigerOccludedFromViji(): boolean {
+    const tigerPos = this.tigerGroup.position;
+    // Behind market stalls along x <= -6.2 or behind the Bajaj auto-rickshaw
+    if (tigerPos.x < -6.3) return true;
+    const distToAuto = Math.hypot(
+      tigerPos.x - this.rickshawGroup.position.x,
+      tigerPos.z - this.rickshawGroup.position.z
+    );
+    if (distToAuto < 2.2) return true;
+    return false;
+  }
+
   private updateVijiPatrol(delta: number) {
     if (this.currentLevelId !== 1 || !this.vijiVisionMesh || !this.vijiGroup) return;
 
-    this.vijiTurnTimer += delta;
-    if (this.vijiTurnTimer > 3.5) {
-      this.vijiTurnTimer = 0;
-      this.vijiAngle = (this.vijiAngle + Math.PI / 2) % (Math.PI * 2);
-      this.vijiGroup.rotation.y = this.vijiAngle;
+    if (this.vijiDistractedTimer > 0) {
+      this.vijiDistractedTimer -= delta;
+    } else {
+      this.vijiTurnTimer += delta;
+      if (this.vijiTurnTimer > 3.5) {
+        this.vijiTurnTimer = 0;
+        this.vijiAngle = (this.vijiAngle + Math.PI / 2) % (Math.PI * 2);
+        this.vijiGroup.rotation.y = this.vijiAngle;
+      }
     }
 
     const toTiger = this.tigerGroup.position.clone().sub(this.vijiGroup.position);
@@ -2848,22 +3657,34 @@ export class MarketScene3D {
 
     const forward = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.vijiAngle);
     const dot = forward.dot(toTiger.normalize());
+    const occluded = this.isTigerOccludedFromViji();
 
-    if (dist < 9 && dot > 0.707) {
+    // Update Sniper Fire-Discipline status based on whether Viji is looking toward the street crossing
+    const lookingAtCrossing = this.vijiDistractedTimer <= 0 && Math.sin(this.vijiAngle) > 0.4;
+    if (!this.state.hukumMode) {
+      this.state.sniperStatus = lookingAtCrossing ? 'HOLD_FIRE_VIJI' : 'LOCKED';
+    }
+
+    if (dist < 9.5 && dot > 0.65 && !occluded) {
       if (this.state.coconutKicked && !this.state.fireworksExploded) {
         this.state.vijiSuspicion = Math.min(100, this.state.vijiSuspicion + 40 * delta);
       } else {
-        this.state.vijiSuspicion = Math.max(0, this.state.vijiSuspicion - 10 * delta);
+        this.state.vijiSuspicion = Math.min(85, this.state.vijiSuspicion + 14 * delta);
       }
 
       if (this.state.vijiSuspicion >= 100) {
         this.triggerBusted();
       }
     } else {
-      this.state.vijiSuspicion = Math.max(0, this.state.vijiSuspicion - 8 * delta);
+      this.state.vijiSuspicion = Math.max(0, this.state.vijiSuspicion - 12 * delta);
     }
 
-    const coneColor = this.state.vijiSuspicion > 50 ? 0xef4444 : 0xfacc15;
+    const coneColor =
+      this.vijiDistractedTimer > 0
+        ? 0x10b981
+        : this.state.vijiSuspicion > 50
+        ? 0xef4444
+        : 0xfacc15;
     (this.vijiVisionMesh.material as THREE.MeshBasicMaterial).color.setHex(coneColor);
 
     this.notifyState();
@@ -2917,7 +3738,9 @@ export class MarketScene3D {
     this.state.aura += 5000 * this.state.multiplier;
     soundManager.playVictoryFanfare();
 
-    if (this.onDialogue) this.onDialogue('lvl1_victory');
+    if (this.currentLevelId === 1 && this.onDialogue) {
+      this.onDialogue('lvl1_victory');
+    }
 
     if (this.onVictory) {
       this.onVictory({

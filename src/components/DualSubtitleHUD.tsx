@@ -22,15 +22,25 @@ export const DualSubtitleHUD: React.FC<DualSubtitleHUDProps> = ({
       case 'tiger_smirk':
       case 'tiger_glasses_flip':
       case 'tiger_coffee':
+      case 'tiger_aviator':
         return '/assets/portraits/tiger.jpg';
       case 'viji_scowl':
+      case 'kantha_tea':
         return '/assets/portraits/viji.jpg';
       case 'vimal_taxi':
+      case 'vimal_shock':
         return '/assets/portraits/vimal.jpg';
+      case 'moorthy_clueless':
+      case 'dileep_angry':
+      case 'bodhi_megaphone':
+        return '/assets/portraits/moorthy.jpg';
       case 'narasimha_rage':
         return '/assets/portraits/narasimha.jpg';
       case 'mathew_cigar':
+      case 'chakri_cigar':
         return '/assets/portraits/mathew.jpg';
+      case 'roddy_helo':
+        return '/assets/portraits/poster.jpg';
       default:
         return '/assets/portraits/tiger.jpg';
     }
@@ -39,15 +49,27 @@ export const DualSubtitleHUD: React.FC<DualSubtitleHUDProps> = ({
   const getRoleTitle = (speaker: string) => {
     switch (speaker) {
       case 'TIGER':
-        return 'MUTHUVEL PANDIAN • THE RETIRED JAILER';
+        return 'MUTHUVEL PANDIAN • FORMER TIHAR JAILER';
       case 'VIJI':
         return 'VIJI PANDIAN • TIGER’S WIFE';
       case 'VIMAL':
-        return 'VIMAL • GOA TOURIST TAXI DRIVER';
+        return 'VIMAL • PREMIER PADMINI GETAWAY DRIVER';
+      case 'MOORTHY':
+        return 'MOORTHY SIR • POMPOUS VIP PAWN';
+      case 'DILEEP':
+        return 'DILEEP • VARMAN CARTEL ENFORCER';
+      case 'KANTHA':
+        return 'KANTHA KALPAK • GOA ESTATE MASTERMIND';
+      case 'BODHI':
+        return 'BODHI KALPAK • SYNDICATE COUNTER-SNIPER BOSS';
+      case 'CHAKRI':
+        return 'CHAKRI KALPAK • KALPAK DYNASTY PATRIARCH';
       case 'NARASIMHA':
-        return 'NARASIMHA • MANDYA BROTHERHOOD';
+        return 'NARASIMHA • MANDYA & MYSURU BROTHERHOOD';
       case 'MATHEW':
-        return 'MATHEW • KOCHI KINGPIN';
+        return 'MATHEW • KOCHI UNDERWORLD KINGPIN';
+      case 'RODDY':
+        return 'RODDY • REFORMED TIHAR AIR-SUPPORT OPERATIVE';
       default:
         return speaker;
     }
@@ -60,38 +82,38 @@ export const DualSubtitleHUD: React.FC<DualSubtitleHUDProps> = ({
         if (onDismiss) onDismiss();
       }}
       data-testid="dual-subtitle-hud"
-      className="absolute bottom-5 left-5 sm:left-1/2 sm:-translate-x-1/2 z-30 w-11/12 max-w-xl cursor-pointer select-none"
+      className="absolute bottom-28 sm:bottom-5 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-30 sm:w-11/12 max-w-xl cursor-pointer select-none"
     >
-      <div className="relative bg-stone-950/92 backdrop-blur-xl border border-amber-500/45 rounded-2xl p-3.5 shadow-[0_15px_45px_rgba(0,0,0,0.9)] flex items-center space-x-3.5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="relative bg-stone-950/92 backdrop-blur-xl border border-amber-500/45 rounded-2xl p-2.5 sm:p-3.5 shadow-[0_15px_45px_rgba(0,0,0,0.9)] flex items-center space-x-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
         {/* Top Anamorphic Accent Line */}
         <div className="absolute top-0 inset-x-8 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
 
         {/* Realistic Character Portrait Frame */}
-        <div className="relative flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 border-amber-400/60 shadow-lg bg-stone-900">
+        <div className="relative flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 border-amber-400/60 shadow-lg bg-stone-900">
           <img
             src={getPortraitSrc(dialogue.portrait)}
             alt={dialogue.speaker}
             className="w-full h-full object-cover object-top filter contrast-115"
           />
-          <div className="absolute bottom-0 inset-x-0 bg-black/75 text-[8px] font-bold text-amber-300 text-center uppercase py-0.5">
+          <div className="absolute bottom-0 inset-x-0 bg-black/75 text-[7px] sm:text-[8px] font-bold text-amber-300 text-center uppercase py-0.5">
             {dialogue.speaker}
           </div>
         </div>
 
         {/* Dual Subtitles Content */}
         <div className="flex-1 text-left min-w-0">
-          <div className="flex items-center space-x-1.5 text-[9px] font-bold uppercase tracking-widest text-amber-400/90">
-            <Volume2 className="w-3 h-3 text-amber-400" />
+          <div className="flex items-center space-x-1.5 text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-amber-400/90">
+            <Volume2 className="w-3 h-3 text-amber-400 flex-shrink-0" />
             <span className="truncate">{getRoleTitle(dialogue.speaker)}</span>
           </div>
 
           {/* Primary Line: Bold Yellow Tanglish */}
-          <div className="text-sm sm:text-base font-bold text-amber-300 font-dialogue leading-snug mt-0.5">
+          <div className="text-xs sm:text-base font-bold text-amber-300 font-dialogue leading-snug mt-0.5">
             &ldquo;{dialogue.tanglish}&rdquo;
           </div>
 
           {/* Secondary Line: Crisp English Subtitle */}
-          <div className="text-xs font-medium text-stone-300 mt-0.5 italic leading-snug">
+          <div className="text-[11px] sm:text-xs font-medium text-stone-300 mt-0.5 italic leading-snug">
             &ldquo;{dialogue.english}&rdquo;
           </div>
         </div>

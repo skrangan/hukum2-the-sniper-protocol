@@ -4,6 +4,7 @@ import { NavbarAuth } from './components/NavbarAuth';
 import { AuraMeterHUD } from './components/AuraMeterHUD';
 import { DualSubtitleHUD } from './components/DualSubtitleHUD';
 import { ActionDeckHUD } from './components/ActionDeckHUD';
+import { MobileTouchControls } from './components/MobileTouchControls';
 import { VictoryModal } from './components/VictoryModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { LevelSelectModal } from './components/LevelSelectModal';
@@ -36,7 +37,10 @@ export const App: React.FC = () => {
     phase: 'STEALTH',
     coconutKicked: false,
     rickshawRolling: false,
-    fireworksExploded: false
+    fireworksExploded: false,
+    sniperStatus: 'STANDBY',
+    aiAlertCount: 0,
+    aliveEnemies: 4
   });
 
   // Loadout & Inventory State
@@ -57,7 +61,7 @@ export const App: React.FC = () => {
 
   const currentLevelConfig = LEVELS.find((l) => l.id === currentLevelId) || LEVELS[0];
 
-  // Keyboard shortcut [I] for Inventory & [M] for Audio Settings
+  // Keyboard shortcut [I] for Inventory
   useEffect(() => {
     const handleGlobalKeys = (e: KeyboardEvent) => {
       if (e.code === 'KeyI') {
@@ -113,9 +117,21 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleDistract = () => {
+    if (threeGameManagerRef.current) {
+      threeGameManagerRef.current.triggerDistraction();
+    }
+  };
+
   const handleCameoSummon = () => {
     if (threeGameManagerRef.current) {
       threeGameManagerRef.current.summonCameo(equippedCameoId);
+    }
+  };
+
+  const handleTouchMoveVector = (dx: number, dz: number) => {
+    if (threeGameManagerRef.current) {
+      threeGameManagerRef.current.setTouchMoveVector(dx, dz);
     }
   };
 
@@ -138,6 +154,8 @@ export const App: React.FC = () => {
       handleFlipSpecs();
     } else if (item.id === 'sniper_designator') {
       handleSniperPing();
+    } else if (item.id === 'temple_bell_whistle') {
+      handleDistract();
     } else if (item.id === 'pollachi_coconut' || item.id === 'vimal_taxi') {
       handleTaxiDrift();
     } else if (item.category === 'CAMEO') {
@@ -189,25 +207,30 @@ export const App: React.FC = () => {
   };
 
   const handleSelectChapter = (id: number) => {
-    setCurrentLevelId(id);
+    const clampedId = ((id - 1) % 10) + 1;
+    setCurrentLevelId(clampedId);
     setShowVictory(false);
     if (threeGameManagerRef.current) {
-      threeGameManagerRef.current.loadChapter(id);
+      threeGameManagerRef.current.loadChapter(clampedId);
     }
     const dialogueMap: Record<number, string> = {
       1: 'lvl1_intro',
       2: 'lvl2_intro',
       3: 'lvl3_intro',
       4: 'lvl4_intro',
-      7: 'lvl7_cameo_narasimha',
-      10: 'lvl10_finale'
+      5: 'lvl5_intro',
+      6: 'lvl6_intro',
+      7: 'lvl7_intro',
+      8: 'lvl8_intro',
+      9: 'lvl9_intro',
+      10: 'lvl10_intro'
     };
-    setActiveDialogue(dialogueMap[id] || 'lvl1_intro');
+    setActiveDialogue(dialogueMap[clampedId] || 'lvl1_intro');
   };
 
   const handleNextLevel = () => {
     setShowVictory(false);
-    const nextId = currentLevelId + 1;
+    const nextId = currentLevelId < 10 ? currentLevelId + 1 : 1;
     handleSelectChapter(nextId);
   };
 
@@ -225,28 +248,39 @@ export const App: React.FC = () => {
       />
 
       {/* Main 3D WebGL Three.js Game Arena */}
-      <main className="flex-1 relative flex items-center justify-center p-0 pt-14 pb-0">
+      <main className="flex-1 relative flex items-center justify-center p-0 pt-12 sm:pt-14 pb-0">
         <ThreeGameContainer
           gameManagerRef={threeGameManagerRef}
           onStateUpdate={(data) => setGameData(data)}
           onDialogue={(key) => setActiveDialogue(key)}
           onVictory={handleLevelCompleted}
+          currentLevel={currentLevelId}
         />
 
-        {/* Top-Left Aura Meter & Motive HUD */}
+        {/* Top-Left Aura Meter, Viji LOS / Sniper Discipline & Motive HUD */}
         <AuraMeterHUD
           gameData={{
             aura: gameData.aura,
             multiplier: gameData.multiplier,
-            composure: gameData.composure,
+            composure: Math.round(gameData.composure),
             vijiSuspicion: Math.round(gameData.vijiSuspicion),
             hukumMode: gameData.hukumMode,
             phase: gameData.phase,
-            activeDialogueKey: null
+            activeDialogueKey: null,
+            sniperStatus: gameData.sniperStatus,
+            aiAlertCount: gameData.aiAlertCount,
+            aliveEnemies: gameData.aliveEnemies
           }}
           levelTitle={currentLevelConfig.titleTanglish}
           levelSetting={currentLevelConfig.setting}
           objective={currentLevelConfig.motive}
+        />
+
+        {/* Bottom-Left Virtual Thumbstick / Directional D-Pad for Mobile & Touch */}
+        <MobileTouchControls
+          onMoveVector={handleTouchMoveVector}
+          onTriggerTrap={handleTaxiDrift}
+          onDistract={handleDistract}
         />
 
         {/* Bottom-Center Dual Subtitle Dialogue Box */}
@@ -261,9 +295,12 @@ export const App: React.FC = () => {
           isHukumMode={gameData.hukumMode}
           onSniperPing={handleSniperPing}
           onTaxiDrift={handleTaxiDrift}
+          onDistract={handleDistract}
           onCameoSummon={handleCameoSummon}
           onOpenInventory={() => setShowInventory(true)}
           equippedCameoId={equippedCameoId}
+          currentLevel={currentLevelId}
+          sniperStatus={gameData.sniperStatus}
         />
       </main>
 

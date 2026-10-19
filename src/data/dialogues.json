@@ -3,22 +3,36 @@
     "lvl1_intro": {
       "speaker": "TIGER",
       "portrait": "tiger_smirk",
-      "tanglish": "Viji pakkathula irukka... Silent-ah mudikanum. Oru chinna thappu kooda nadakka koodathu.",
-      "english": "Viji is right around the corner... Keep it dead silent. Not a single mistake.",
+      "tanglish": "Viji pakkathula irukka... Arjun vishayam avalukku theriya koodathu. Dileep-oda 4 bike aalungala silent-ah mudikanum.",
+      "english": "Viji is shopping right around the corner... She must never know the truth about Arjun. Take out Dileep's 4 bike scouts dead silent.",
       "sfx": "muthuvel_whisper"
     },
     "lvl1_viji_warning": {
       "speaker": "VIJI",
       "portrait": "viji_scowl",
-      "tanglish": "Ennanga! Kaila enna coconut-u? Market-la vambu ethuvum pannalayae?",
-      "english": "Hey! What's that coconut in your hand? You better not be picking street fights!",
+      "tanglish": "Ennanga! Kaila enna Pollachi coconut-u? Rithu school street-la vambu ethuvum pannalayae?",
+      "english": "Hey! What's that Pollachi coconut in your hand? You better not be picking street fights near Rithu's school!",
       "sfx": "viji_scold"
+    },
+    "lvl1_viji_distracted": {
+      "speaker": "VIJI",
+      "portrait": "viji_scowl",
+      "tanglish": "Kovil mani adikkudhu... Naan pooja pakkam paathutu varaen, neenga kaaikari bag-ah paarunga!",
+      "english": "The temple bell is ringing... I'll check the shrine stall, you watch the vegetable bag!",
+      "sfx": "temple_bell"
+    },
+    "lvl1_hold_fire": {
+      "speaker": "VIMAL",
+      "portrait": "vimal_taxi",
+      "tanglish": "Thalaiva! Viji anni neraa crossing-ah paakuraanga! Snipers hold fire — [Q] அழுத்தி Temple Bell அடிச்சு திசை திருப்புங்க!",
+      "english": "Boss! Viji is looking straight at the crossing! Snipers are holding fire — press [Q] to ring the Temple Bell and turn her gaze!",
+      "sfx": "vimal_honk"
     },
     "lvl1_rickshaw_ready": {
       "speaker": "VIMAL",
       "portrait": "vimal_taxi",
-      "tanglish": "Thalaiva! Auto handbrake loose-ah thaan irukku. Oru thattu thattuna neraya goons flat-u!",
-      "english": "Boss! The rickshaw handbrake is loose. One tap and those bike thugs are wiped out!",
+      "tanglish": "Thalaiva! Bajaj auto handbrake loose-ah thaan irukku. Coconut thattu thattuna 4 bikers-um Sivakasi cracker cart-la flat-u!",
+      "english": "Boss! The Bajaj rickshaw handbrake is loose. One coconut tap and all 4 bikers crash straight into the Sivakasi fireworks cart!",
       "sfx": "vimal_honk"
     },
     "lvl1_spec_flip": {
@@ -31,107 +45,219 @@
     "lvl1_victory": {
       "speaker": "TIGER",
       "portrait": "tiger_coffee",
-      "tanglish": "Viji vandhutta... Coconuts ellam correct bag-la pottachu. Polama?",
-      "english": "Viji's here... All the coconuts are safely in the grocery bag. Shall we head home?",
+      "tanglish": "Viji vandhutta... Coconuts ellam correct bag-la pottachu. Rithu-va school-la irundhu kooptu polama?",
+      "english": "Viji's here... All the coconuts are safely in the grocery bag. Shall we pick up Rithu from school and head home?",
       "sfx": "tiger_chuckle"
     },
     "lvl2_intro": {
       "speaker": "VIMAL",
       "portrait": "vimal_shock",
-      "tanglish": "Thalaiva! 6 black SUV ninnu narrow bridge-ah complete-ah block panniduchu! Engine off pannitaen, namaku aappu dhaan!",
-      "english": "Boss! 6 black SUVs have completely blocked this narrow bridge! I killed the taxi engine, we're surrounded!",
-      "sfx": "vimal_gasp"
+      "tanglish": "Aiyayyo Thalaiva! 6 black SUV-la weapon-oda narrow bridge-ah block pannitaanunga! Namma Premier Padmini taxi-ah reverse eduthudava? Moorthy vera anga phone pesa poyitaaru!",
+      "english": "Oh god Boss! 6 armored black SUVs with weapons have blocked this narrow bridge! Should I reverse our Premier Padmini taxi? Moorthy has run off to make calls!",
+      "sfx": "vimal_honk"
     },
     "lvl2_tiger_cue": {
       "speaker": "TIGER",
       "portrait": "tiger_aviator",
-      "tanglish": "Vimal, calm-ah iru. Kannadi shirt pocket-la irukku... Maattattuma?",
-      "english": "Vimal, stay calm. My aviators are right here in my shirt pocket... Shall I put them on?",
+      "tanglish": "Vimal... Bayapadaama kitta vaa. Shirt pocket-la irukkura en kannadi-ah maatti rendu vaati aatturaen... Nalla paaru.",
+      "english": "Vimal... don't panic, stand right beside me. I'm putting on the aviators from my shirt pocket and shaking them twice... Watch closely.",
       "sfx": "specs_clink"
     },
     "lvl2_shake_specs": {
       "speaker": "TIGER",
       "portrait": "tiger_glasses_flip",
-      "tanglish": "Oru shake... Rendaavathu shake... Hilltop Snipers, target the 6 SUVs! HUKUM!",
-      "english": "One shake... Second shake... Hilltop snipers, target all 6 SUVs! HUKUM!",
+      "tanglish": "Oru shake... Rendaavathu shake... Kannadi rendu vaati asanjaa, Hilltop Snipers — Execute Protocol HUKUM!",
+      "english": "One shake... Second shake... When the glasses shake twice, Hilltop Snipers — Execute Protocol HUKUM!",
       "sfx": "hukum_bass_drop"
     },
     "lvl2_vimal_shock": {
       "speaker": "VIMAL",
       "portrait": "vimal_shock",
-      "tanglish": "Ammaadii! Kannadiya rendu thadava aatuna... 6 SUV-um blast aayi key en kayila vandhu vizhudha?!",
-      "english": "Good lord! He shook his glasses twice... and all 6 SUVs blew up into fireballs while the keys landed right in my hands?!",
+      "tanglish": "Ammaadii! Ennathu?! Kannadi-ah rendu thadava asachaa 6 SUV-um river-la blast aagiduchu! Golden car key neeraa en kayila vandhu vizhudhu!",
+      "english": "Good lord! What on earth?! He just shook his glasses twice and all 6 SUVs blew up into the river gorge! The golden SUV key landed right in my hands!",
       "sfx": "vimal_scream"
     },
     "lvl2_victory": {
       "speaker": "MOORTHY",
       "portrait": "moorthy_clueless",
-      "tanglish": "Paathiya Tiger! Oru phone call, anju nimisham... Six SUVs flat-u! En power purinjatha?",
-      "english": "See that Tiger! One phone call, five minutes... Six SUVs wiped out! Did you grasp my power?",
+      "tanglish": "Paathiya Tiger! Oru phone call, anju nimisham... En pera ketta udane 6 SUV-um aaththula kudhichitanunga! Moorthy Sir power purinjatha?",
+      "english": "See that Tiger! One phone call, five minutes... The moment they heard my name, all 6 SUVs jumped into the river! Did you grasp Moorthy Sir's power?",
       "sfx": "moorthy_laugh"
     },
     "lvl3_intro": {
       "speaker": "TIGER",
       "portrait": "tiger_smirk",
-      "tanglish": "Thambi... Tea innum varala, aana unga aalunga ellam kilambittanga.",
-      "english": "Bro... My tea hasn't even arrived yet, and your boys have already left the planet.",
+      "tanglish": "Thambi... Mukund anuppuna 12 pera? En meter tea innum varala, aana kettle whistle adikkumbodhu unga aalunga kilambiduvaanga.",
+      "english": "Bro... Did tracker Mukund send all 12 of you? My meter tea hasn't even arrived yet, and when that kettle whistles your boys will leave the planet.",
       "sfx": "tea_kettle_whistle"
     },
     "lvl3_spec_flip": {
       "speaker": "TIGER",
       "portrait": "tiger_glasses_flip",
-      "tanglish": "Oru Sun, Oru Moon... Adhe maadhiri Tamilnadu-kku ore oru Tiger. HUKUM!",
-      "english": "One Sun, One Moon... In the same way, there is only one Tiger. HUKUM!",
+      "tanglish": "Oru Sun, Oru Moon... Puriyutha? Tihar-la irundhu Palakkad varaikkum ore oru Tiger dhaan. HUKUM!",
+      "english": "One Sun, One Moon... Do you get the hierarchy? From Tihar Jail to Palakkad, there is only one Tiger. HUKUM!",
       "sfx": "hukum_bass_drop"
     },
     "lvl3_victory": {
       "speaker": "TIGER",
       "portrait": "tiger_coffee",
-      "tanglish": "Tea nalla irukku thambi. Vimal, vandiya edu, adutha location polam!",
-      "english": "The tea is excellent. Vimal, start the taxi, let's head to the next hideout!",
+      "tanglish": "Tea nalla strong-ah irukku thambi. Vimal, vandiya edu... Kochi Port-la Chola idol containers-ah thookanum!",
+      "english": "The tea is nice and strong, brother. Vimal, start the taxi... We have 3 Chola idol containers to intercept at Kochi Port!",
       "sfx": "tiger_chuckle"
     },
     "lvl4_intro": {
       "speaker": "DILEEP",
       "portrait": "dileep_angry",
-      "tanglish": "Tiger Muthuvel Pandian! Container yard-la unna thookama naan poga maatten!",
-      "english": "Tiger Muthuvel Pandian! I'm not leaving this port without locking you in a cell!",
+      "tanglish": "Tiger Muthuvel Pandian! Varman-ah mudichathu nee dhaan-nu therinjiduchu! Indha Kochi container yard-la unna uyiroda vida maatten!",
+      "english": "Tiger Muthuvel Pandian! I know you're the one who finished Varman! I won't let you leave this Kochi container yard alive!",
       "sfx": "dileep_shout"
     },
     "lvl4_spec_flip": {
       "speaker": "TIGER",
       "portrait": "tiger_glasses_flip",
-      "tanglish": "Mathew, container yard clearance protocol initiate pannu!",
-      "english": "Mathew, initiate container yard clearance protocol!",
+      "tanglish": "24 mani nerathula alapara kelapparom! Mathew, magnetic crane-ah irakki Dileep jeep-ah Madagascar kappal-la ஏத்து! HUKUM!",
+      "english": "In 24 hours we unleash total mayhem! Mathew, drop the magnetic crane and hoist Dileep's jeep onto the Madagascar cargo ship! HUKUM!",
       "sfx": "hukum_bass_drop"
     },
     "lvl4_victory": {
       "speaker": "MATHEW",
       "portrait": "mathew_cigar",
-      "tanglish": "Pakshe Tiger, ivide nammude vintage Mercedes barricades ellam thool-aakki! Polam!",
-      "english": "Tiger, the vintage Mercedes turned all their barricades to dust! Time to roll!",
+      "tanglish": "Pakshe Tiger, ivide nammude vintage Mercedes barricades ellam thool-aakki! 3 idol containers-um namma kitta... Goa polam!",
+      "english": "My friend Tiger, our vintage Mercedes turned their port barricades to dust! All 3 idol containers are ours... Onward to Goa!",
       "sfx": "mercedes_engine"
+    },
+    "lvl5_intro": {
+      "speaker": "KANTHA",
+      "portrait": "kantha_tea",
+      "tanglish": "Welcome to Goa, Jailer Muthuvel Pandian. Tea-ya, Coffee-ya? Enga Kalpak estate-la neenga enna kudikkanum-nu naanga dhaan decide pannuvom.",
+      "english": "Welcome to Goa, Jailer Muthuvel Pandian. Tea or Coffee? In our Kalpak estate, we decide which sip will be your last.",
+      "sfx": "tea_cup_clink"
+    },
+    "lvl5_spec_flip": {
+      "speaker": "TIGER",
+      "portrait": "tiger_glasses_flip",
+      "tanglish": "Tea-ya, Coffee-ya? Neenga decide panna mudiyathu Kantha Madam... En sniper laser teapot-la pattu chandelier vizhumbodhu puriyum. HUKUM!",
+      "english": "Tea or Coffee? You don't get to decide, Madam Kantha... You'll understand when my sniper laser ricochets off that silver teapot and drops the chandelier. HUKUM!",
+      "sfx": "hukum_bass_drop"
+    },
+    "lvl5_victory": {
+      "speaker": "TIGER",
+      "portrait": "tiger_smirk",
+      "tanglish": "Unga poison tea unga lieutenants-ke kuduthachu. Goa Syndicate ledger en pocket-la... Varataa?",
+      "english": "Your poisoned tea has been served to your own lieutenants. The Goa Syndicate ledger is in my pocket... Shall I take my leave?",
+      "sfx": "tiger_chuckle"
+    },
+    "lvl6_intro": {
+      "speaker": "BODHI",
+      "portrait": "bodhi_megaphone",
+      "tanglish": "Hello Mic Testing 1-2-3! Enna Muthuvel Sir, Tihar Jailer mattum thaan sniper vaippana? En 8 green-laser counter-snipers-ah paaru!",
+      "english": "Hello Mic Testing 1-2-3! What's the matter Muthuvel Sir, does only the Tihar Jailer have a monopoly on snipers? Feast your eyes on my 8 green-laser counter-snipers!",
+      "sfx": "megaphone_feedback"
+    },
+    "lvl6_spec_flip": {
+      "speaker": "TIGER",
+      "portrait": "tiger_glasses_flip",
+      "tanglish": "Vimal, namma taxi bonnet-ah thiruppu... Bodhi-oda green laser avan fireworks truck melaye thirumbi vizhattum! HUKUM!",
+      "english": "Vimal, angle our chrome taxi hood... Let Bodhi's green lasers bounce straight back into his own firework trucks! HUKUM!",
+      "sfx": "hukum_bass_drop"
+    },
+    "lvl6_victory": {
+      "speaker": "VIMAL",
+      "portrait": "vimal_taxi",
+      "tanglish": "Thalaiva! Bodhi megaphone-oda carnival ferris wheel-la thongitu kathuraan! Namma Padmini bonnet mirror maadhiri velai senjiduchu!",
+      "english": "Boss! Bodhi is dangling from the carnival Ferris wheel screaming into his megaphone! Our Padmini hood worked like a precision mirror!",
+      "sfx": "vimal_honk"
+    },
+    "lvl7_intro": {
+      "speaker": "NARASIMHA",
+      "portrait": "narasimha_rage",
+      "tanglish": "Muthuvel Anna! En kudumbatha kaapathuna unakku uyirae kuduppaen! Ved, Sharva 3 breach van-oda safe house-ah suthitaanunga!",
+      "english": "Brother Muthuvel! You saved my wife and son—I owe you my life! Ved and Sharva Kalpak have surrounded the Mysuru safe house with 3 armored breach vans!",
+      "sfx": "narasimha_roar"
     },
     "lvl7_cameo_narasimha": {
       "speaker": "NARASIMHA",
       "portrait": "narasimha_rage",
-      "tanglish": "Naan ulla vandhutaen... Yaarukkum ini thappikka vazhi illa!",
-      "english": "I have entered the arena... There is no exit for anyone alive!",
+      "tanglish": "Puli padhungurathu paayurathukku thaan! Naan ulla vandhutaen... Yaarukkum ini thappikka vazhi illa!",
+      "english": "The Tiger crouches only to pounce harder! I have entered the arena... There is no exit for anyone alive!",
       "sfx": "narasimha_roar"
     },
     "lvl7_cameo_mathew": {
       "speaker": "MATHEW",
       "portrait": "mathew_cigar",
-      "tanglish": "Ivide oru Mercedes vandhaal... Barricades ellam thool-aakum.",
-      "english": "When this vintage Mercedes rolls in... barricades turn to dust.",
+      "tanglish": "Ivide oru vintage Mercedes vandhaal... Kalpak breach vans ellam thool-aakum!",
+      "english": "When this vintage W123 Mercedes rolls in... the Kalpak breach vans turn to dust!",
       "sfx": "mercedes_engine"
+    },
+    "lvl7_victory": {
+      "speaker": "TIGER",
+      "portrait": "tiger_glasses_flip",
+      "tanglish": "Narasimha, Mathew... Moonu perum serndha entha cartel-um nikkathu. Adutha stop: Chakri Kalpak-oda Casino Cruise!",
+      "english": "Narasimha, Mathew... When the three of us stand together, no cartel on earth can survive. Next stop: Chakri Kalpak's Casino Cruise!",
+      "sfx": "tiger_chuckle"
+    },
+    "lvl8_intro": {
+      "speaker": "TIGER",
+      "portrait": "tiger_smirk",
+      "tanglish": "Chakri Kalpak... Tihar-la naan paatha velai vera, ippo un 'Bindaas' cruise ship-la paakura velai vera.",
+      "english": "Chakri Kalpak... The job I retired from at Tihar was brutal, what I'm about to do on your 'Bindaas' cruise ship is far worse.",
+      "sfx": "muthuvel_whisper"
+    },
+    "lvl8_spec_flip": {
+      "speaker": "TIGER",
+      "portrait": "tiger_glasses_flip",
+      "tanglish": "DJ bass drop aagumbodhu 3 idol vault-um vedikkattum! Vimal speedboat-la crates ellam parandhu vizhattum! HUKUM!",
+      "english": "Right when the DJ's bass drops, blow all 3 idol vaults wide open! Launch the crates straight onto Vimal's speedboat! HUKUM!",
+      "sfx": "hukum_bass_drop"
+    },
+    "lvl8_victory": {
+      "speaker": "VIMAL",
+      "portrait": "vimal_taxi",
+      "tanglish": "Thalaiva! Party crowd innum dance aaditu irukkanunga, aana Chakri Kalpak-oda moththa vault-um namma speedboat-la!",
+      "english": "Boss! The party crowd is still dancing to the beat, while Chakri Kalpak's entire war-chest is sitting in our speedboat!",
+      "sfx": "vimal_honk"
+    },
+    "lvl9_intro": {
+      "speaker": "TIGER",
+      "portrait": "tiger_glasses_flip",
+      "tanglish": "50 varushama enna azhikka paarthanga... Oru adi kooda pinnaadi eduthu vaikkama indha Goa runway-la nikkuraen. Vaanga da!",
+      "english": "For 50 years, legends tried to finish me... I won't take a single step backward on this Goa runway. Come get some!",
+      "sfx": "muthuvel_whisper"
+    },
+    "lvl9_spec_flip": {
+      "speaker": "RODDY",
+      "portrait": "roddy_helo",
+      "tanglish": "Tihar-la neenga en வாழ்க்கையை மாத்துனீங்க Jailer Sir! Helicopter twin-SMGs locked on runway jeeps — HUKUM!",
+      "english": "You reformed my life in Tihar Prison, Jailer Sir! Helicopter twin-SMGs locked onto the runway jeeps — HUKUM!",
+      "sfx": "hukum_bass_drop"
+    },
+    "lvl9_victory": {
+      "speaker": "TIGER",
+      "portrait": "tiger_smirk",
+      "tanglish": "Runway clear. Roddy, helicopter-ah Cabo de Rama cliff fortress pakkam thiruppu... Viji-yum Rithu-vum anga irukkaanga.",
+      "english": "Runway clear. Roddy, bank the helicopter toward the Cabo de Rama cliff fortress... Viji and Rithu are being held at the penthouse.",
+      "sfx": "tiger_chuckle"
+    },
+    "lvl10_intro": {
+      "speaker": "CHAKRI",
+      "portrait": "chakri_cigar",
+      "tanglish": "Muthuvel Pandian! Un pondatti Viji-kku Arjun-ah konnathu nee dhaan-nu therinjiduchu! Innum enna dhairiyathula en helipad-la nikkura?",
+      "english": "Muthuvel Pandian! Your wife Viji now knows you ordered Arjun's execution! By what audacity do you still stand on my fortress helipad?",
+      "sfx": "dileep_shout"
     },
     "lvl10_finale": {
       "speaker": "TIGER",
       "portrait": "tiger_glasses_flip",
-      "tanglish": "Hukum... Tiger Ka Hukum! 10 Snipers Ready... FIRE!",
-      "english": "The Verdict... Is Tiger's Alone! All 10 Snipers Ready... FIRE!",
+      "tanglish": "Thappu senja petha paiyana irundhaalum thandanai undu... Adhu dhaan Tiger Dharma! HUKUM... TIGER KA HUKUM! 10 Snipers Ready... FIRE!",
+      "english": "Even if it is my own flesh and blood who turns corrupt, justice spares no one... That is Tiger's Dharma! HUKUM... TIGER KA HUKUM! All 10 Snipers Ready... FIRE!",
       "sfx": "hukum_ten_snipers"
+    },
+    "lvl10_victory": {
+      "speaker": "TIGER",
+      "portrait": "tiger_coffee",
+      "tanglish": "Kantha, Bodhi, Chakri... Moonu peraiyum Vimal-oda 'Prison Van' taxi dicky-la pottachu. Viji, Rithu... Veetukku polama?",
+      "english": "Kantha, Bodhi, and Chakri... All three Kalpak bosses are locked inside Vimal's 'Prison Van' taxi. Viji, Rithu... Shall we go home?",
+      "sfx": "tiger_chuckle"
     }
   }
 }

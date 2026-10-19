@@ -37,35 +37,36 @@ export const NavbarAuth: React.FC<NavbarAuthProps> = ({
   }, []);
 
   return (
-    <header className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-5 py-2.5 bg-stone-950/92 backdrop-blur-xl border-b border-amber-600/30 shadow-[0_4px_30px_rgba(0,0,0,0.85)]">
+    <header className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-2.5 sm:px-5 py-2 bg-stone-950/92 backdrop-blur-xl border-b border-amber-600/30 shadow-[0_4px_30px_rgba(0,0,0,0.85)]">
       {/* Left: Character Emblem & Film Title */}
-      <div className="flex items-center space-x-3">
-        <div className="relative w-9 h-9 rounded-lg overflow-hidden border border-amber-500/60 shadow-md bg-stone-900 flex-shrink-0">
+      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+        <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg overflow-hidden border border-amber-500/60 shadow-md bg-stone-900 flex-shrink-0">
           <img
             src="/assets/portraits/poster.jpg"
             alt="Jailer 2: Hukum Poster"
             className="w-full h-full object-cover object-top"
           />
         </div>
-        <div>
-          <h1 className="text-base sm:text-lg font-black tracking-wider text-amber-400 uppercase font-display leading-none">
-            JAILER 2: <span className="text-stone-100">HUKUM — THE SNIPER PROTOCOL</span>
+        <div className="min-w-0">
+          <h1 className="text-xs sm:text-base md:text-lg font-black tracking-wider text-amber-400 uppercase font-display leading-none truncate">
+            JAILER 2: <span className="text-stone-100">HUKUM</span>
           </h1>
-          <p className="text-[10px] text-stone-400 uppercase tracking-widest mt-0.5">
-            Muthuvel Pandian • Chapter {currentLevel} of 10
+          <p className="text-[9px] sm:text-[10px] text-stone-400 uppercase tracking-widest mt-0.5 truncate">
+            Muthuvel Pandian • Ch.{currentLevel}/10
           </p>
         </div>
       </div>
 
       {/* Center: Navigation Controls */}
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-1 sm:space-x-2">
         <button
           onClick={() => {
             soundManager.playUiClick();
             onOpenIntroVideo();
           }}
           data-testid="nav-watch-intro"
-          className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold bg-red-950/75 hover:bg-red-900/80 border border-red-600/40 text-red-200 rounded-lg transition-all"
+          className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-xs font-bold bg-red-950/75 hover:bg-red-900/80 border border-red-600/40 text-red-200 rounded-lg transition-all"
+          title="Watch Story Prologue"
         >
           <Film className="w-3.5 h-3.5 text-red-400" />
           <span className="hidden md:inline">Story Prologue</span>
@@ -77,10 +78,11 @@ export const NavbarAuth: React.FC<NavbarAuthProps> = ({
             onOpenLevelSelect();
           }}
           data-testid="nav-chapters"
-          className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold bg-stone-900/90 hover:bg-stone-800 border border-stone-700/80 hover:border-amber-500/40 text-amber-300 rounded-lg transition-all"
+          className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-xs font-bold bg-stone-900/90 hover:bg-stone-800 border border-stone-700/80 hover:border-amber-500/40 text-amber-300 rounded-lg transition-all"
         >
           <Map className="w-3.5 h-3.5 text-amber-400" />
-          <span>Chapters (1-10)</span>
+          <span className="hidden sm:inline">Chapters (1-10)</span>
+          <span className="sm:hidden">Ch.{currentLevel}</span>
         </button>
 
         <button
@@ -89,10 +91,10 @@ export const NavbarAuth: React.FC<NavbarAuthProps> = ({
             onOpenInventory();
           }}
           data-testid="nav-inventory"
-          className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 rounded-lg transition-all"
+          className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 rounded-lg transition-all"
         >
           <Briefcase className="w-3.5 h-3.5 text-amber-400" />
-          <span>Inventory & Allies</span>
+          <span className="hidden sm:inline">Inventory & Allies</span>
         </button>
 
         <button
@@ -101,7 +103,7 @@ export const NavbarAuth: React.FC<NavbarAuthProps> = ({
             onOpenLeaderboard();
           }}
           data-testid="nav-leaderboard"
-          className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold bg-stone-900/90 hover:bg-stone-800 border border-stone-700/80 text-stone-200 rounded-lg transition-all"
+          className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-xs font-bold bg-stone-900/90 hover:bg-stone-800 border border-stone-700/80 text-stone-200 rounded-lg transition-all"
         >
           <Trophy className="w-3.5 h-3.5 text-amber-400" />
           <span className="hidden lg:inline">Standings</span>
@@ -114,12 +116,12 @@ export const NavbarAuth: React.FC<NavbarAuthProps> = ({
             onOpenAudioSettings();
           }}
           data-testid="nav-audio-settings"
-          className="flex items-center space-x-2 px-3 py-1.5 text-xs font-bold bg-stone-900/95 hover:bg-stone-800 border border-stone-700/90 hover:border-amber-500/40 text-stone-200 rounded-lg transition-all"
+          className="flex items-center space-x-1.5 px-2 sm:px-3 py-1.5 text-xs font-bold bg-stone-900/95 hover:bg-stone-800 border border-stone-700/90 hover:border-amber-500/40 text-stone-200 rounded-lg transition-all"
           title="Audio Settings (Music & SFX Toggles)"
         >
           <Sliders className="w-3.5 h-3.5 text-amber-400" />
-          <span className="hidden sm:inline">Audio Settings</span>
-          <div className="flex items-center space-x-1 text-[9px] font-mono">
+          <span className="hidden md:inline">Audio Settings</span>
+          <div className="hidden sm:flex items-center space-x-1 text-[9px] font-mono">
             <span
               className={`px-1.5 py-0.5 rounded ${
                 audioState.musicEnabled
@@ -143,17 +145,17 @@ export const NavbarAuth: React.FC<NavbarAuthProps> = ({
       </div>
 
       {/* Right: Character Profile Badge */}
-      <div className="flex items-center space-x-2.5">
-        <div className="flex items-center space-x-2.5 bg-stone-900/95 border border-stone-800 px-3 py-1 rounded-full">
+      <div className="hidden sm:flex items-center space-x-2.5">
+        <div className="flex items-center space-x-2 bg-stone-900/95 border border-stone-800 px-2.5 py-1 rounded-full">
           <img
             src="/assets/portraits/tiger.jpg"
             alt="Muthuvel Pandian"
-            className="w-7 h-7 rounded-full object-cover object-top border border-amber-500/60"
+            className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover object-top border border-amber-500/60"
           />
           <div className="text-left">
             <div className="text-xs font-bold text-stone-100 flex items-center space-x-1 leading-tight">
-              <span>{profile?.display_name || 'Muthuvel Pandian'}</span>
-              <Shield className="w-3 h-3 text-amber-400 inline" />
+              <span className="truncate max-w-[110px]">{profile?.display_name || 'Muthuvel Pandian'}</span>
+              <Shield className="w-3 h-3 text-amber-400 inline flex-shrink-0" />
             </div>
             <div className="text-[10px] text-amber-400 font-mono flex items-center space-x-1 leading-tight">
               <Award className="w-2.5 h-2.5 inline" />

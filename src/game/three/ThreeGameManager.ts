@@ -9,13 +9,14 @@ export class ThreeGameManager {
   private clock: THREE.Clock;
   private animFrameId: number | null = null;
 
-  // Keyboard input tracking
+  // Keyboard & virtual touch input tracking
   private keys = {
     left: false,
     right: false,
     up: false,
     down: false
   };
+  private touchVector = { x: 0, z: 0 };
 
   constructor(
     container: HTMLElement,
@@ -52,7 +53,7 @@ export class ThreeGameManager {
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
 
-    // Raycast click for 3D interactions (e.g. clicking coconut) + starting BGM on first interaction
+    // Raycast click / tap for 3D hazard interactions & tap-to-walk on mobile/desktop
     this.renderer.domElement.addEventListener('pointerdown', this.onPointerDown);
   }
 
@@ -71,18 +72,22 @@ export class ThreeGameManager {
       case 'ArrowLeft':
       case 'KeyA':
         this.keys.left = true;
+        this.marketScene.clearTapTarget();
         break;
       case 'ArrowRight':
       case 'KeyD':
         this.keys.right = true;
+        this.marketScene.clearTapTarget();
         break;
       case 'ArrowUp':
       case 'KeyW':
         this.keys.up = true;
+        this.marketScene.clearTapTarget();
         break;
       case 'ArrowDown':
       case 'KeyS':
         this.keys.down = true;
+        this.marketScene.clearTapTarget();
         break;
       case 'Space':
         e.preventDefault();
@@ -90,6 +95,9 @@ export class ThreeGameManager {
         break;
       case 'KeyE':
         this.marketScene.kickCoconut();
+        break;
+      case 'KeyQ':
+        this.marketScene.triggerDistraction();
         break;
       case 'Digit1':
         this.marketScene.pingSniperTargets();
@@ -124,7 +132,7 @@ export class ThreeGameManager {
     }
   };
 
-  private onPointerDown = (e: MouseEvent) => {
+  private onPointerDown = (e: PointerEvent) => {
     soundManager.startCinematicBgm();
 
     const rect = this.renderer.domElement.getBoundingClientRect();
@@ -136,9 +144,20 @@ export class ThreeGameManager {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, this.marketScene.camera);
 
-    const intersects = raycaster.intersectObject(this.marketScene.coconutMesh, true);
-    if (intersects.length > 0) {
-      this.marketScene.kickCoconut();
+    // 1. Check if player tapped/clicked the coconut or an interactive hazard
+    if (this.marketScene.coconutMesh && this.marketScene.coconutMesh.visible) {
+      const intersects = raycaster.intersectObject(this.marketScene.coconutMesh, true);
+      if (intersects.length > 0) {
+        this.marketScene.kickCoconut();
+        return;
+      }
+    }
+
+    // 2. Otherwise raycast onto the street ground plane (y = 0) for tap-to-walk
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const hitPoint = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(groundPlane, hitPoint)) {
+      this.marketScene.setTapTarget(hitPoint);
     }
   };
 
@@ -147,12 +166,21 @@ export class ThreeGameManager {
       this.animFrameId = requestAnimationFrame(animate);
       const delta = Math.min(this.clock.getDelta(), 0.1);
 
-      this.marketScene.update(delta, this.keys);
+      this.marketScene.update(delta, this.keys, this.touchVector);
       this.renderer.render(this.marketScene.scene, this.marketScene.camera);
     };
 
     animate();
   };
+
+  public setTouchMoveVector(dx: number, dz: number) {
+    soundManager.startCinematicBgm();
+    this.touchVector.x = dx;
+    this.touchVector.z = dz;
+    if (Math.abs(dx) > 0.01 || Math.abs(dz) > 0.01) {
+      this.marketScene.clearTapTarget();
+    }
+  }
 
   public triggerSpectacleFlip() {
     soundManager.startCinematicBgm();
@@ -167,6 +195,11 @@ export class ThreeGameManager {
   public kickCoconut() {
     soundManager.startCinematicBgm();
     this.marketScene.kickCoconut();
+  }
+
+  public triggerDistraction() {
+    soundManager.startCinematicBgm();
+    this.marketScene.triggerDistraction();
   }
 
   public summonCameo(cameoId?: string) {
