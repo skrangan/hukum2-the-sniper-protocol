@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { soundManager } from '../audio/SoundManager';
+import { TextureGenerator } from './TextureGenerator';
 
 export interface Game3DState {
   aura: number;
@@ -17,7 +18,7 @@ export class MarketScene3D {
   public scene: THREE.Scene;
   public camera: THREE.PerspectiveCamera;
 
-  // Characters & Entities
+  // Hierarchical Groups & Actors
   public tigerGroup: THREE.Group = new THREE.Group();
   public vijiGroup: THREE.Group = new THREE.Group();
   public rickshawGroup: THREE.Group = new THREE.Group();
@@ -26,9 +27,11 @@ export class MarketScene3D {
   public thugs: { group: THREE.Group; alive: boolean; vel: THREE.Vector3; rotVel: THREE.Vector3 }[] = [];
   public sniperBeams: THREE.Line[] = [];
   public fireworkParticles: { mesh: THREE.Mesh; vel: THREE.Vector3; life: number }[] = [];
+  public dustParticles: THREE.Points | null = null;
 
-  // Vision Cone
-  private vijiVisionMesh!: THREE.Mesh;
+  // Vision Spotlight
+  private vijiSpotlight!: THREE.SpotLight;
+  private vijiSpotlightTarget!: THREE.Object3D;
   private vijiAngle: number = 0;
   private vijiTurnTimer: number = 0;
 
@@ -47,7 +50,8 @@ export class MarketScene3D {
 
   private startTime: number = 0;
   private walkTime: number = 0;
-  private tigerGlasses!: THREE.Mesh;
+  private tigerGlasses!: THREE.Group;
+  private tigerTorsoGroup!: THREE.Group;
   private tigerArmL!: THREE.Group;
   private tigerArmR!: THREE.Group;
 
@@ -58,436 +62,669 @@ export class MarketScene3D {
 
   constructor() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0a0f1d);
-    this.scene.fog = new THREE.FogExp2(0x0a0f1d, 0.025);
 
-    // Cinematic 3D Perspective Camera
-    this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    this.camera.position.set(-14, 18, 22);
-    this.camera.lookAt(0, 0, 0);
+    // Cinematic Golden Hour Skybox Atmosphere
+    this.scene.background = new THREE.Color(0x131a29);
+    this.scene.fog = new THREE.FogExp2(0x131a29, 0.016);
 
-    this.initLights();
-    this.buildMarketEnvironment();
-    this.buildTigerCharacter();
-    this.buildVijiCharacter();
-    this.buildAutoRickshaw();
-    this.buildCoconutHazard();
-    this.buildFireworksCart();
-    this.buildThugs();
+    // Cinematic 3D Camera with Film Focal Length
+    this.camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+    this.camera.position.set(-16, 16, 24);
+    this.camera.lookAt(0, 1.5, 0);
+
+    this.setupRealisticLighting();
+    this.buildRealisticChennaiStreet();
+    this.buildRealisticTiger();
+    this.buildRealisticViji();
+    this.buildRealisticBajajRickshaw();
+    this.buildRealisticCoconut();
+    this.buildRealisticFireworksCart();
+    this.buildRealisticThugsAndBikes();
+    this.createAtmosphericDust();
 
     this.startTime = Date.now();
   }
 
-  private initLights() {
-    // Ambient Light
-    const ambientLight = new THREE.AmbientLight(0xfff7ed, 0.6);
+  // --- 1. Realistic Cinematic Lighting Rig ---
+  private setupRealisticLighting() {
+    // Ambient light with warm dusk bounce
+    const ambientLight = new THREE.AmbientLight(0xffedd5, 0.7);
     this.scene.add(ambientLight);
 
-    // Warm Sun Directional Light (Golden Hour Cinema)
-    const sunLight = new THREE.DirectionalLight(0xffedd5, 1.2);
-    sunLight.position.set(-15, 25, 15);
+    // Warm Sun Directional Light (Golden Hour Low-Angle Cinema)
+    const sunLight = new THREE.DirectionalLight(0xfdba74, 1.6);
+    sunLight.position.set(-25, 30, 20);
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 2048;
-    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.mapSize.width = 4096;
+    sunLight.shadow.mapSize.height = 4096;
     sunLight.shadow.camera.near = 0.5;
-    sunLight.shadow.camera.far = 60;
-    sunLight.shadow.camera.left = -25;
-    sunLight.shadow.camera.right = 25;
-    sunLight.shadow.camera.top = 25;
-    sunLight.shadow.camera.bottom = -25;
-    sunLight.shadow.bias = -0.0005;
+    sunLight.shadow.camera.far = 100;
+    sunLight.shadow.camera.left = -30;
+    sunLight.shadow.camera.right = 30;
+    sunLight.shadow.camera.top = 30;
+    sunLight.shadow.camera.bottom = -30;
+    sunLight.shadow.bias = -0.0003;
     this.scene.add(sunLight);
 
-    // Streetlamp Accent Light (Warm Yellow)
-    const streetLight = new THREE.PointLight(0xfbbf24, 1.5, 18);
-    streetLight.position.set(2, 6, 4);
-    streetLight.castShadow = true;
-    this.scene.add(streetLight);
+    // Cool Sky Fill Light
+    const skyFill = new THREE.DirectionalLight(0x38bdf8, 0.4);
+    skyFill.position.set(20, 20, -20);
+    this.scene.add(skyFill);
+
+    // Streetlamp Warm Volumetric Lights
+    this.createStreetlamp(2, 0, 4);
+    this.createStreetlamp(-14, 0, 4);
+    this.createStreetlamp(12, 0, 4);
   }
 
-  private buildMarketEnvironment() {
-    // Ground Street (Asphalt)
-    const groundGeo = new THREE.PlaneGeometry(60, 60);
-    const groundMat = new THREE.MeshStandardMaterial({
-      color: 0x1e293b,
+  private createStreetlamp(x: number, y: number, z: number) {
+    const lampGroup = new THREE.Group();
+
+    // Cast iron fluted pole
+    const baseGeo = new THREE.CylinderGeometry(0.3, 0.45, 0.8, 16);
+    const ironMat = new THREE.MeshStandardMaterial({ color: 0x18181b, metalness: 0.85, roughness: 0.3 });
+    const base = new THREE.Mesh(baseGeo, ironMat);
+    base.position.y = 0.4;
+    lampGroup.add(base);
+
+    const poleGeo = new THREE.CylinderGeometry(0.12, 0.16, 6.5, 16);
+    const pole = new THREE.Mesh(poleGeo, ironMat);
+    pole.position.y = 3.65;
+    pole.castShadow = true;
+    lampGroup.add(pole);
+
+    // Ornate curved arm & lantern
+    const armGeo = new THREE.TorusGeometry(0.6, 0.06, 8, 16, Math.PI);
+    const arm = new THREE.Mesh(armGeo, ironMat);
+    arm.position.set(0.4, 6.7, 0);
+    arm.rotation.z = Math.PI / 4;
+    lampGroup.add(arm);
+
+    const lanternGeo = new THREE.ConeGeometry(0.35, 0.7, 8);
+    const lanternMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+    const lantern = new THREE.Mesh(lanternGeo, lanternMat);
+    lantern.position.set(0.7, 6.4, 0);
+    lantern.rotation.x = Math.PI;
+    lampGroup.add(lantern);
+
+    // Warm Point Light
+    const pl = new THREE.PointLight(0xfbbf24, 2.2, 16, 1.5);
+    pl.position.set(0.7, 6.3, 0);
+    pl.castShadow = true;
+    lampGroup.add(pl);
+
+    lampGroup.position.set(x, y, z);
+    this.scene.add(lampGroup);
+  }
+
+  // --- 2. Realistic Chennai Market Street Environment ---
+  private buildRealisticChennaiStreet() {
+    // 1. Asphalt Road with aggregate grain & painted markings
+    const roadTexture = TextureGenerator.createAsphaltTexture();
+    const roadGeo = new THREE.PlaneGeometry(80, 24);
+    const roadMat = new THREE.MeshStandardMaterial({
+      map: roadTexture,
+      roughness: 0.88,
+      metalness: 0.08
+    });
+    const road = new THREE.Mesh(roadGeo, roadMat);
+    road.rotation.x = -Math.PI / 2;
+    road.position.set(0, 0, 4);
+    road.receiveShadow = true;
+    this.scene.add(road);
+
+    // 2. Concrete Sidewalk with stone pavers
+    const sidewalkTexture = TextureGenerator.createSidewalkTexture();
+    const sidewalkGeo = new THREE.BoxGeometry(80, 0.35, 12);
+    const sidewalkMat = new THREE.MeshStandardMaterial({
+      map: sidewalkTexture,
       roughness: 0.85,
       metalness: 0.1
     });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    this.scene.add(ground);
-
-    // Yellow Road Lanes
-    const roadMarkGeo = new THREE.PlaneGeometry(0.3, 30);
-    const roadMarkMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.6 });
-    const roadMark = new THREE.Mesh(roadMarkGeo, roadMarkMat);
-    roadMark.rotation.x = -Math.PI / 2;
-    roadMark.position.set(0, 0.02, 0);
-    this.scene.add(roadMark);
-
-    // Sidewalk Platform (Raised Curb)
-    const curbGeo = new THREE.BoxGeometry(10, 0.3, 40);
-    const curbMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 });
-    const sidewalk = new THREE.Mesh(curbGeo, curbMat);
-    sidewalk.position.set(-10, 0.15, 0);
+    const sidewalk = new THREE.Mesh(sidewalkGeo, sidewalkMat);
+    sidewalk.position.set(0, 0.175, -8);
     sidewalk.receiveShadow = true;
     this.scene.add(sidewalk);
 
-    // Market Stalls with Striped Canopies
-    this.createMarketStall(-8, 0, -6, 0xef4444);
-    this.createMarketStall(-8, 0, 2, 0x3b82f6);
-    this.createMarketStall(-8, 0, 10, 0x10b981);
+    // Yellow & Black Curb Stones
+    const curbGeo = new THREE.BoxGeometry(80, 0.4, 0.4);
+    const curbMat = new THREE.MeshStandardMaterial({ color: 0xca8a04, roughness: 0.6 });
+    const curb = new THREE.Mesh(curbGeo, curbMat);
+    curb.position.set(0, 0.2, -2.1);
+    this.scene.add(curb);
 
-    // Street Lamp
-    const poleGeo = new THREE.CylinderGeometry(0.1, 0.12, 6);
-    const poleMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8 });
-    const pole = new THREE.Mesh(poleGeo, poleMat);
-    pole.position.set(2, 3, 4);
-    pole.castShadow = true;
-    this.scene.add(pole);
+    // 3. Multi-story Madras Buildings with Colonial Architecture
+    this.createMadrasBuilding(-22, 0, -14, '#b45309', 'முருகன் டீ ஸ்டால்', 'MURUGAN TEA & TIFFIN STALL');
+    this.createMadrasBuilding(-6, 0, -14, '#0f766e', 'அண்ணாச்சி மளிகை', 'ANNACHI PROVISION STORES');
+    this.createMadrasBuilding(10, 0, -14, '#854d0e', 'ராயல் டெக்ஸ்டைல்ஸ்', 'ROYAL SILKS & SAREES');
+    this.createMadrasBuilding(26, 0, -14, '#1e3a8a', 'சென்னை பார்மசி', 'CHENNAI CITY PHARMACY');
 
-    const lampHeadGeo = new THREE.SphereGeometry(0.35, 16, 16);
-    const lampHeadMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
-    const lampHead = new THREE.Mesh(lampHeadGeo, lampHeadMat);
-    lampHead.position.set(2, 6, 4);
-    this.scene.add(lampHead);
+    // 4. Authentic Market Stalls (Vegetables & Bananas)
+    this.createDetailedMarketStall(-12, 0.35, -5, [
+      { name: 'bananas', x: -0.8, y: 1.8, z: 0 },
+      { name: 'tomatoes', x: -0.6, y: 0.8, z: 0.4 },
+      { name: 'coconuts', x: 0.6, y: 0.8, z: 0.4 }
+    ]);
+
+    this.createDetailedMarketStall(2, 0.35, -5, [
+      { name: 'tomatoes', x: -0.5, y: 0.8, z: 0.3 },
+      { name: 'coconuts', x: 0.5, y: 0.8, z: 0.3 }
+    ]);
   }
 
-  private createMarketStall(x: number, y: number, z: number, canopyColor: number) {
+  private createMadrasBuilding(x: number, y: number, z: number, brickHue: string, signTamil: string, signEng: string) {
+    const bGroup = new THREE.Group();
+
+    // 3-story concrete structure
+    const facadeTex = TextureGenerator.createBrickBuildingTexture(brickHue);
+    const bGeo = new THREE.BoxGeometry(14, 15, 8);
+    const bMat = new THREE.MeshStandardMaterial({ map: facadeTex, roughness: 0.9 });
+    const bMesh = new THREE.Mesh(bGeo, bMat);
+    bMesh.position.y = 7.5;
+    bMesh.castShadow = true;
+    bMesh.receiveShadow = true;
+    bGroup.add(bMesh);
+
+    // Shop Signboard
+    const signTex = TextureGenerator.createShopSignboardTexture(signTamil, signEng, brickHue);
+    const signGeo = new THREE.PlaneGeometry(12, 3);
+    const signMat = new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.4 });
+    const sign = new THREE.Mesh(signGeo, signMat);
+    sign.position.set(0, 4.2, 4.05);
+    bGroup.add(sign);
+
+    // Balcony Railing on 2nd Floor
+    const balconyGeo = new THREE.BoxGeometry(13, 1, 1.2);
+    const balconyMat = new THREE.MeshStandardMaterial({ color: 0x27272a, metalness: 0.7 });
+    const balcony = new THREE.Mesh(balconyGeo, balconyMat);
+    balcony.position.set(0, 6.8, 4.4);
+    balcony.castShadow = true;
+    bGroup.add(balcony);
+
+    // Rooftop Terracotta Parapet
+    const parapetGeo = new THREE.BoxGeometry(14.4, 0.8, 8.4);
+    const parapetMat = new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.8 });
+    const parapet = new THREE.Mesh(parapetGeo, parapetMat);
+    parapet.position.y = 15.2;
+    bGroup.add(parapet);
+
+    bGroup.position.set(x, y, z);
+    this.scene.add(bGroup);
+  }
+
+  private createDetailedMarketStall(x: number, y: number, z: number, items: { name: string; x: number; y: number; z: number }[]) {
     const stall = new THREE.Group();
 
-    // Wooden table
-    const tableGeo = new THREE.BoxGeometry(3, 1.2, 4);
-    const tableMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
+    // Heavy weathered wooden table
+    const tableGeo = new THREE.BoxGeometry(4.2, 0.9, 2.2);
+    const tableMat = new THREE.MeshStandardMaterial({ color: 0x54351a, roughness: 0.9 });
     const table = new THREE.Mesh(tableGeo, tableMat);
-    table.position.y = 0.6;
+    table.position.y = 0.45;
     table.castShadow = true;
     table.receiveShadow = true;
     stall.add(table);
 
-    // Four canopy poles
-    const poleMat = new THREE.MeshStandardMaterial({ color: 0x451a03 });
-    const polePositions = [
-      [-1.3, 1.5, -1.8],
-      [1.3, 1.5, -1.8],
-      [-1.3, 1.5, 1.8],
-      [1.3, 1.5, 1.8]
-    ];
-    polePositions.forEach(([px, py, pz]) => {
-      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 3), poleMat);
-      p.position.set(px, py + 0.6, pz);
+    // Canvas Canopy with striped cloth
+    const canopyGeo = new THREE.ConeGeometry(3.0, 1.2, 4);
+    const canopyMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.7 });
+    const canopy = new THREE.Mesh(canopyGeo, canopyMat);
+    canopy.position.set(0, 3.2, 0);
+    canopy.rotation.y = Math.PI / 4;
+    canopy.castShadow = true;
+    stall.add(canopy);
+
+    // Bamboo Support Poles
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0xca8a04, roughness: 0.8 });
+    [[-1.8, -0.9], [1.8, -0.9], [-1.8, 0.9], [1.8, 0.9]].forEach(([px, pz]) => {
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 3.2), poleMat);
+      p.position.set(px, 1.6, pz);
+      p.castShadow = true;
       stall.add(p);
     });
 
-    // Striped Canopy
-    const canopyGeo = new THREE.ConeGeometry(2.5, 0.8, 4);
-    const canopyMat = new THREE.MeshStandardMaterial({ color: canopyColor, roughness: 0.5 });
-    const canopy = new THREE.Mesh(canopyGeo, canopyMat);
-    canopy.position.y = 3.2;
-    canopy.rotation.y = Math.PI / 4;
-    stall.add(canopy);
+    // Fresh produce props
+    items.forEach((item) => {
+      if (item.name === 'bananas') {
+        // Hanging Yellow Banana Bunch
+        const bBunch = new THREE.Group();
+        const bananaMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
+        for (let b = 0; b < 8; b++) {
+          const bMesh = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.06, 6, 8, Math.PI / 2), bananaMat);
+          bMesh.rotation.z = (b * Math.PI) / 4;
+          bBunch.add(bMesh);
+        }
+        bBunch.position.set(item.x, item.y, item.z);
+        stall.add(bBunch);
+      } else if (item.name === 'tomatoes') {
+        // Tomato crate
+        const crateGeo = new THREE.BoxGeometry(1.2, 0.35, 0.8);
+        const crateMat = new THREE.MeshStandardMaterial({ color: 0x854d0e });
+        const crate = new THREE.Mesh(crateGeo, crateMat);
+        crate.position.set(item.x, item.y, item.z);
+        stall.add(crate);
+
+        const tomatoMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 });
+        for (let t = 0; t < 6; t++) {
+          const tom = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), tomatoMat);
+          tom.position.set(item.x - 0.3 + (t % 3) * 0.3, item.y + 0.22, item.z - 0.15 + Math.floor(t / 3) * 0.3);
+          stall.add(tom);
+        }
+      }
+    });
 
     stall.position.set(x, y, z);
     this.scene.add(stall);
   }
 
-  // 3D Model: "Tiger" Muthuvel Pandian (Superstar Rajinikanth style)
-  private buildTigerCharacter() {
+  // --- 3. Realistic 3D Tiger Muthuvel Pandian (Superstar Rajinikanth) ---
+  private buildRealisticTiger() {
     this.tigerGroup = new THREE.Group();
+    this.tigerTorsoGroup = new THREE.Group();
 
-    // Torso (Crisp White Linen Shirt)
-    const torsoGeo = new THREE.BoxGeometry(0.9, 1.2, 0.5);
-    const shirtMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.7 });
-    const torso = new THREE.Mesh(torsoGeo, shirtMat);
-    torso.position.y = 1.6;
-    torso.castShadow = true;
-    this.tigerGroup.add(torso);
+    // PBR Linen Fabric Material for Shirt
+    const shirtMat = new THREE.MeshStandardMaterial({
+      color: 0xfbfbfe,
+      roughness: 0.85,
+      metalness: 0.05
+    });
 
-    // Collar
-    const collarGeo = new THREE.BoxGeometry(0.7, 0.2, 0.4);
-    const collar = new THREE.Mesh(collarGeo, new THREE.MeshStandardMaterial({ color: 0xe2e8f0 }));
-    collar.position.set(0, 2.2, 0.05);
-    this.tigerGroup.add(collar);
+    // Anatomical Torso (Bush Shirt with collar & folds)
+    const chestGeo = new THREE.BoxGeometry(1.0, 1.1, 0.55);
+    const chest = new THREE.Mesh(chestGeo, shirtMat);
+    chest.position.y = 1.7;
+    chest.castShadow = true;
+    this.tigerTorsoGroup.add(chest);
 
-    // Head
-    const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
-    const skinMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.8 });
-    const head = new THREE.Mesh(headGeo, skinMat);
-    head.position.y = 2.5;
+    // Shirt Collar with folded lapels
+    const collarGeo = new THREE.ConeGeometry(0.5, 0.3, 4);
+    const collar = new THREE.Mesh(collarGeo, shirtMat);
+    collar.position.set(0, 2.25, 0.1);
+    collar.rotation.x = Math.PI;
+    this.tigerTorsoGroup.add(collar);
+
+    // Front Chest Pocket with Golden Pen Clip
+    const pocketGeo = new THREE.BoxGeometry(0.25, 0.28, 0.02);
+    const pocket = new THREE.Mesh(pocketGeo, shirtMat);
+    pocket.position.set(0.3, 1.85, 0.28);
+    this.tigerTorsoGroup.add(pocket);
+
+    const penClip = new THREE.Mesh(
+      new THREE.BoxGeometry(0.02, 0.14, 0.04),
+      new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.9, roughness: 0.2 })
+    );
+    penClip.position.set(0.3, 1.95, 0.3);
+    this.tigerTorsoGroup.add(penClip);
+
+    // Traditional Silk Dhoti/Veshti with Realistic Pleats & Golden Zari
+    const veshtiMat = new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      roughness: 0.8
+    });
+    const veshtiGeo = new THREE.CylinderGeometry(0.48, 0.58, 1.35, 16);
+    const veshti = new THREE.Mesh(veshtiGeo, veshtiMat);
+    veshti.position.y = 0.7;
+    veshti.castShadow = true;
+    this.tigerGroup.add(veshti);
+
+    // Gold Zari Border on Veshti
+    const zariMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      metalness: 0.8,
+      roughness: 0.3
+    });
+    const zari = new THREE.Mesh(new THREE.CylinderGeometry(0.57, 0.59, 0.12, 16), zariMat);
+    zari.position.y = 0.15;
+    this.tigerGroup.add(zari);
+
+    // Head & Rajinikanth Facial Structure
+    const skinMat = new THREE.MeshStandardMaterial({
+      color: 0xd49b70,
+      roughness: 0.75,
+      metalness: 0.05
+    });
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.36, 20, 20), skinMat);
+    head.position.y = 2.55;
     head.castShadow = true;
-    this.tigerGroup.add(head);
+    this.tigerTorsoGroup.add(head);
 
-    // Silver side-swept hair
-    const hairGeo = new THREE.SphereGeometry(0.38, 16, 16, 0, Math.PI * 2, 0, Math.PI * 0.55);
-    const hairMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.9 });
-    const hair = new THREE.Mesh(hairGeo, hairMat);
-    hair.position.set(0, 2.6, -0.05);
-    this.tigerGroup.add(hair);
+    // Styled Silver Hair (Swept Back Mass Hairstyle)
+    const hairMat = new THREE.MeshStandardMaterial({
+      color: 0xa1a1aa,
+      roughness: 0.95
+    });
+    const hair = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4, 20, 20, 0, Math.PI * 2, 0, Math.PI * 0.6),
+      hairMat
+    );
+    hair.position.set(0, 2.68, -0.06);
+    hair.scale.set(1.0, 1.1, 1.15);
+    this.tigerTorsoGroup.add(hair);
 
-    // Silver beard & mustache
-    const beardGeo = new THREE.BoxGeometry(0.4, 0.25, 0.2);
-    const beardMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1 });
-    const beard = new THREE.Mesh(beardGeo, beardMat);
-    beard.position.set(0, 2.35, 0.25);
-    this.tigerGroup.add(beard);
+    // Groomed Silver Salt-and-Pepper Beard & Mustache
+    const beardMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, roughness: 0.9 });
+    const beard = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.28, 0.25), beardMat);
+    beard.position.set(0, 2.38, 0.26);
+    this.tigerTorsoGroup.add(beard);
 
-    // Aviator Sunglasses (Dark tint with golden rims)
-    const glassesGroup = new THREE.Group();
-    const frameGeo = new THREE.BoxGeometry(0.5, 0.15, 0.1);
-    const glassesMat = new THREE.MeshStandardMaterial({
+    // Iconic Ray-Ban Aviator Sunglasses (Gold Rims + Dark Reflective Lenses)
+    this.tigerGlasses = new THREE.Group();
+    const goldFrameMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      metalness: 0.95,
+      roughness: 0.15
+    });
+    const darkLensMat = new THREE.MeshStandardMaterial({
       color: 0x09090b,
       metalness: 0.9,
       roughness: 0.1
     });
-    this.tigerGlasses = new THREE.Mesh(frameGeo, glassesMat);
-    glassesGroup.add(this.tigerGlasses);
-    glassesGroup.position.set(0, 2.52, 0.32);
-    this.tigerGroup.add(glassesGroup);
 
-    // Traditional Veshti with Golden Border
-    const veshtiGeo = new THREE.CylinderGeometry(0.45, 0.55, 1.2, 16);
-    const veshtiMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.8 });
-    const veshti = new THREE.Mesh(veshtiGeo, veshtiMat);
-    veshti.position.y = 0.6;
-    veshti.castShadow = true;
-    this.tigerGroup.add(veshti);
+    const lensL = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.05), darkLensMat);
+    lensL.position.x = -0.14;
+    const lensR = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.05), darkLensMat);
+    lensR.position.x = 0.14;
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.03), goldFrameMat);
 
-    // Gold Veshti Zari Border
-    const borderGeo = new THREE.CylinderGeometry(0.53, 0.56, 0.1, 16);
-    const borderMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.6 });
-    const border = new THREE.Mesh(borderGeo, borderMat);
-    border.position.y = 0.15;
-    this.tigerGroup.add(border);
+    this.tigerGlasses.add(lensL);
+    this.tigerGlasses.add(lensR);
+    this.tigerGlasses.add(bridge);
+    this.tigerGlasses.position.set(0, 2.58, 0.35);
+    this.tigerTorsoGroup.add(this.tigerGlasses);
 
-    // Arms
-    const armGeo = new THREE.BoxGeometry(0.25, 0.9, 0.25);
+    // Luxury Gold Wristwatch on Left Hand
+    const watch = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.14, 0.14, 0.08, 16),
+      new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.95, roughness: 0.2 })
+    );
+    watch.rotation.z = Math.PI / 2;
+
+    // Articulated Arms
+    const armGeo = new THREE.BoxGeometry(0.26, 0.95, 0.26);
     this.tigerArmL = new THREE.Group();
     const meshArmL = new THREE.Mesh(armGeo, shirtMat);
-    meshArmL.position.y = -0.35;
+    meshArmL.position.y = -0.4;
+    meshArmL.castShadow = true;
     this.tigerArmL.add(meshArmL);
-    this.tigerArmL.position.set(-0.6, 2.0, 0);
-    this.tigerGroup.add(this.tigerArmL);
+    watch.position.set(0, -0.7, 0);
+    this.tigerArmL.add(watch);
+    this.tigerArmL.position.set(-0.68, 2.1, 0);
+    this.tigerTorsoGroup.add(this.tigerArmL);
 
     this.tigerArmR = new THREE.Group();
     const meshArmR = new THREE.Mesh(armGeo, shirtMat);
-    meshArmR.position.y = -0.35;
+    meshArmR.position.y = -0.4;
+    meshArmR.castShadow = true;
     this.tigerArmR.add(meshArmR);
-    this.tigerArmR.position.set(0.6, 2.0, 0);
-    this.tigerGroup.add(this.tigerArmR);
+    this.tigerArmR.position.set(0.68, 2.1, 0);
+    this.tigerTorsoGroup.add(this.tigerArmR);
 
-    // Position Tiger in alley
-    this.tigerGroup.position.set(-6, 0, -2);
+    // Leather Chappals (Sandals)
+    const shoeMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.8 });
+    const footL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, 0.55), shoeMat);
+    footL.position.set(-0.25, 0.05, 0.05);
+    const footR = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, 0.55), shoeMat);
+    footR.position.set(0.25, 0.05, 0.05);
+    this.tigerGroup.add(footL);
+    this.tigerGroup.add(footR);
+
+    this.tigerGroup.add(this.tigerTorsoGroup);
+    this.tigerGroup.position.set(-8, 0, -3);
     this.scene.add(this.tigerGroup);
   }
 
-  // 3D Model: Viji with dynamic volumetric vision cone
-  private buildVijiCharacter() {
+  // --- 4. Realistic Viji (Tiger's Wife) with Kanjeevaram Saree & Vision Light ---
+  private buildRealisticViji() {
     this.vijiGroup = new THREE.Group();
 
-    // Saree Body (Traditional Maroon / Gold)
-    const sareeGeo = new THREE.ConeGeometry(0.65, 2.0, 16);
-    const sareeMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.7 });
-    const saree = new THREE.Mesh(sareeGeo, sareeMat);
-    saree.position.y = 1.0;
+    // Maroon & Gold Kanjeevaram Silk Saree
+    const sareeMat = new THREE.MeshStandardMaterial({
+      color: 0x991b1b,
+      roughness: 0.65
+    });
+    const sareePleats = new THREE.CylinderGeometry(0.6, 0.8, 1.8, 16);
+    const saree = new THREE.Mesh(sareePleats, sareeMat);
+    saree.position.y = 0.9;
     saree.castShadow = true;
     this.vijiGroup.add(saree);
 
-    // Head
-    const headGeo = new THREE.SphereGeometry(0.32, 16, 16);
-    const head = new THREE.Mesh(headGeo, new THREE.MeshStandardMaterial({ color: 0xd4a373 }));
-    head.position.y = 2.2;
-    head.castShadow = true;
+    // Gold Pallu Drape across shoulder
+    const palluMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.6 });
+    const pallu = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.4, 0.6), palluMat);
+    pallu.position.set(-0.35, 1.4, 0);
+    pallu.rotation.z = -0.2;
+    this.vijiGroup.add(pallu);
+
+    // Head & Hair Bun with Jasmine Flowers (Malli Poo)
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xd49b70, roughness: 0.75 });
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 16), skinMat);
+    head.position.y = 2.15;
     this.vijiGroup.add(head);
 
-    // Hair bun with Jasmine flowers
-    const bunGeo = new THREE.SphereGeometry(0.2, 12, 12);
-    const bun = new THREE.Mesh(bunGeo, new THREE.MeshStandardMaterial({ color: 0x18181b }));
-    bun.position.set(0, 2.3, -0.25);
-    this.vijiGroup.add(bun);
+    const hairBun = new THREE.Mesh(
+      new THREE.SphereGeometry(0.22, 12, 12),
+      new THREE.MeshStandardMaterial({ color: 0x18181b })
+    );
+    hairBun.position.set(0, 2.22, -0.26);
+    this.vijiGroup.add(hairBun);
 
-    const jasmineGeo = new THREE.TorusGeometry(0.22, 0.05, 8, 16);
-    const jasmine = new THREE.Mesh(jasmineGeo, new THREE.MeshStandardMaterial({ color: 0xffffff }));
-    jasmine.position.set(0, 2.3, -0.25);
-    this.vijiGroup.add(jasmine);
+    const jasmineFlowers = new THREE.Mesh(
+      new THREE.TorusGeometry(0.24, 0.06, 8, 16),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 })
+    );
+    jasmineFlowers.position.set(0, 2.22, -0.26);
+    this.vijiGroup.add(jasmineFlowers);
 
-    // Vision Cone (3D Projected Light Mesh)
-    const coneGeo = new THREE.ConeGeometry(5, 10, 16, 1, true);
-    const coneMat = new THREE.MeshBasicMaterial({
-      color: 0xfacc15,
-      transparent: true,
-      opacity: 0.22,
-      side: THREE.DoubleSide
-    });
-    this.vijiVisionMesh = new THREE.Mesh(coneGeo, coneMat);
-    this.vijiVisionMesh.rotation.x = -Math.PI / 2;
-    this.vijiVisionMesh.position.set(0, 0.1, 5);
-    this.vijiGroup.add(this.vijiVisionMesh);
+    // Grocery Basket in Hand
+    const basket = new THREE.Mesh(
+      new THREE.BoxGeometry(0.4, 0.45, 0.5),
+      new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 })
+    );
+    basket.position.set(0.6, 1.1, 0.1);
+    this.vijiGroup.add(basket);
 
-    this.vijiGroup.position.set(-6, 0, 6);
+    // Realistic Spotlight Vision Cone (Flashlight Beam projected on street)
+    this.vijiSpotlight = new THREE.SpotLight(0xfacc15, 4.0, 15, Math.PI / 4, 0.5, 1.2);
+    this.vijiSpotlight.position.set(0, 1.8, 0);
+    this.vijiSpotlight.castShadow = true;
+
+    this.vijiSpotlightTarget = new THREE.Object3D();
+    this.vijiSpotlightTarget.position.set(0, 0, 8);
+    this.vijiGroup.add(this.vijiSpotlightTarget);
+    this.vijiSpotlight.target = this.vijiSpotlightTarget;
+
+    this.vijiGroup.add(this.vijiSpotlight);
+
+    this.vijiGroup.position.set(-6, 0, 7);
     this.scene.add(this.vijiGroup);
   }
 
-  // 3D Model: Auto-Rickshaw
-  private buildAutoRickshaw() {
+  // --- 5. Realistic Bajaj RE Auto-Rickshaw ---
+  private buildRealisticBajajRickshaw() {
     this.rickshawGroup = new THREE.Group();
 
-    // Chassis (Green body)
-    const chassisGeo = new THREE.BoxGeometry(2.2, 1.2, 3.4);
-    const chassisMat = new THREE.MeshStandardMaterial({ color: 0x047857, roughness: 0.6 });
-    const chassis = new THREE.Mesh(chassisGeo, chassisMat);
-    chassis.position.y = 1.0;
+    // Authentic Yellow Fiberglass Canopy Roof
+    const roofMat = new THREE.MeshStandardMaterial({
+      color: 0xfacc15,
+      roughness: 0.4,
+      metalness: 0.1
+    });
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.8, 2.8), roofMat);
+    roof.position.set(0, 2.2, -0.2);
+    roof.castShadow = true;
+    this.rickshawGroup.add(roof);
+
+    // Green Lower Chassis
+    const chassisMat = new THREE.MeshStandardMaterial({
+      color: 0x065f46,
+      roughness: 0.5,
+      metalness: 0.3
+    });
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.2, 3.6), chassisMat);
+    chassis.position.set(0, 1.1, 0);
     chassis.castShadow = true;
     this.rickshawGroup.add(chassis);
 
-    // Yellow Canopy Hood
-    const hoodGeo = new THREE.BoxGeometry(2.1, 0.9, 2.6);
-    const hoodMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.5 });
-    const hood = new THREE.Mesh(hoodGeo, hoodMat);
-    hood.position.set(0, 2.0, -0.2);
-    hood.castShadow = true;
-    this.rickshawGroup.add(hood);
-
-    // Windshield
-    const glassGeo = new THREE.PlaneGeometry(1.9, 0.8);
-    const glassMat = new THREE.MeshStandardMaterial({
+    // Windshield & Chrome Pillars
+    const glassMat = new THREE.MeshPhysicalMaterial({
       color: 0xbae6fd,
       roughness: 0.1,
-      metalness: 0.8,
+      metalness: 0.9,
+      transmission: 0.6,
       transparent: true,
-      opacity: 0.7
+      opacity: 0.85
     });
-    const glass = new THREE.Mesh(glassGeo, glassMat);
-    glass.position.set(0, 2.0, 1.15);
+    const glass = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.85), glassMat);
+    glass.position.set(0, 2.1, 1.25);
     this.rickshawGroup.add(glass);
 
-    // Headlight
-    const lightGeo = new THREE.SphereGeometry(0.2, 12, 12);
-    const lightMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
-    const light = new THREE.Mesh(lightGeo, lightMat);
-    light.position.set(0, 1.0, 1.75);
+    // Realistic Headlight with Glass Refraction & Yellow Beam
+    const light = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.22, 0.22, 0.15, 16),
+      new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfef08a, emissiveIntensity: 0.8 })
+    );
+    light.rotation.x = Math.PI / 2;
+    light.position.set(0, 1.1, 1.85);
     this.rickshawGroup.add(light);
 
-    // Wheels
-    const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
-    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.9 });
+    // Authentic Number Plate (TN 01 AB 1975)
+    const plateTex = TextureGenerator.createRickshawDecalTexture();
+    const plate = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.0, 0.5),
+      new THREE.MeshStandardMaterial({ map: plateTex })
+    );
+    plate.position.set(0, 0.6, 1.82);
+    this.rickshawGroup.add(plate);
 
-    const wheelFront = new THREE.Mesh(wheelGeo, wheelMat);
-    wheelFront.rotation.z = Math.PI / 2;
-    wheelFront.position.set(0, 0.4, 1.2);
-    wheelFront.castShadow = true;
-    this.rickshawGroup.add(wheelFront);
+    // Authentic Bajaj Wheels with Tread & Chrome Rims
+    const tireMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.95 });
+    const rimMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.8, roughness: 0.2 });
 
-    const wheelBackL = new THREE.Mesh(wheelGeo, wheelMat);
-    wheelBackL.rotation.z = Math.PI / 2;
-    wheelBackL.position.set(-1.1, 0.4, -0.8);
-    wheelBackL.castShadow = true;
-    this.rickshawGroup.add(wheelBackL);
+    const createWheel = (x: number, y: number, z: number) => {
+      const wGroup = new THREE.Group();
+      const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.32, 16), tireMat);
+      tire.rotation.z = Math.PI / 2;
+      tire.castShadow = true;
+      wGroup.add(tire);
 
-    const wheelBackR = new THREE.Mesh(wheelGeo, wheelMat);
-    wheelBackR.rotation.z = Math.PI / 2;
-    wheelBackR.position.set(1.1, 0.4, -0.8);
-    wheelBackR.castShadow = true;
-    this.rickshawGroup.add(wheelBackR);
+      const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.33, 16), rimMat);
+      rim.rotation.z = Math.PI / 2;
+      wGroup.add(rim);
 
-    // Position on incline
-    this.rickshawGroup.position.set(-1, 0, -3);
-    this.rickshawGroup.rotation.y = 0.4;
+      wGroup.position.set(x, y, z);
+      return wGroup;
+    };
+
+    this.rickshawGroup.add(createWheel(0, 0.45, 1.3)); // Front wheel
+    this.rickshawGroup.add(createWheel(-1.15, 0.45, -0.9)); // Back Left
+    this.rickshawGroup.add(createWheel(1.15, 0.45, -0.9)); // Back Right
+
+    // Place Rickshaw on the incline slope
+    this.rickshawGroup.position.set(-1.5, 0, -3);
+    this.rickshawGroup.rotation.y = 0.45;
     this.scene.add(this.rickshawGroup);
   }
 
-  // 3D Model: Coconut Hazard
-  private buildCoconutHazard() {
-    const coconutGeo = new THREE.SphereGeometry(0.35, 16, 16);
+  // --- 6. Realistic Green Coconut ---
+  private buildRealisticCoconut() {
+    const coconutGeo = new THREE.SphereGeometry(0.4, 20, 20);
     const coconutMat = new THREE.MeshStandardMaterial({
-      color: 0x65a30d,
-      roughness: 0.8,
+      color: 0x4d7c0f,
+      roughness: 0.75,
       metalness: 0.1
     });
     this.coconutMesh = new THREE.Mesh(coconutGeo, coconutMat);
-    this.coconutMesh.position.set(-3.5, 0.35, -2);
+    this.coconutMesh.position.set(-4.5, 0.4, -2.5);
     this.coconutMesh.castShadow = true;
     this.scene.add(this.coconutMesh);
   }
 
-  // 3D Model: Diwali Fireworks Cart
-  private buildFireworksCart() {
+  // --- 7. Realistic Diwali Fireworks Cart ---
+  private buildRealisticFireworksCart() {
     this.fireworksGroup = new THREE.Group();
 
-    // Wooden Cart Frame
-    const cartGeo = new THREE.BoxGeometry(2.5, 0.8, 4);
-    const cartMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
-    const cart = new THREE.Mesh(cartGeo, cartMat);
-    cart.position.y = 0.8;
-    cart.castShadow = true;
-    this.fireworksGroup.add(cart);
+    // Wooden Cart Carriage with spoke wheels
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.9 });
+    const cartBed = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.85, 4.5), woodMat);
+    cartBed.position.y = 0.9;
+    cartBed.castShadow = true;
+    this.fireworksGroup.add(cartBed);
 
-    // Colorful Diwali Firework Rocket Tubes
-    const colors = [0xef4444, 0x3b82f6, 0xfacc15, 0x10b981, 0xa855f7];
-    for (let i = 0; i < 8; i++) {
-      const tubeGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.2, 8);
-      const tubeMat = new THREE.MeshStandardMaterial({ color: colors[i % colors.length] });
-      const tube = new THREE.Mesh(tubeGeo, tubeMat);
-      tube.position.set(-0.8 + (i % 4) * 0.5, 1.6, -1.2 + Math.floor(i / 4) * 1.5);
-      tube.castShadow = true;
-      this.fireworksGroup.add(tube);
+    // Decorative Diwali Cracker Boxes
+    const boxTex = TextureGenerator.createFireworkBoxTexture();
+    const boxMat = new THREE.MeshStandardMaterial({ map: boxTex, roughness: 0.5 });
+    for (let bx = 0; bx < 3; bx++) {
+      for (let bz = 0; bz < 4; bz++) {
+        const box = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.65, 0.9), boxMat);
+        box.position.set(-0.8 + bx * 0.8, 1.6, -1.3 + bz * 0.9);
+        box.castShadow = true;
+        this.fireworksGroup.add(box);
+      }
     }
 
-    this.fireworksGroup.position.set(7, 0, 10);
+    // Diwali Rocket Tubes
+    const rocketMat = new THREE.MeshStandardMaterial({ color: 0xdc2626 });
+    for (let r = 0; r < 8; r++) {
+      const rocket = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.5, 8), rocketMat);
+      rocket.position.set(-0.9 + r * 0.25, 2.4, 1.2);
+      rocket.castShadow = true;
+      this.fireworksGroup.add(rocket);
+    }
+
+    this.fireworksGroup.position.set(8.5, 0, 11);
     this.scene.add(this.fireworksGroup);
   }
 
-  // 3D Models: 4 Bike Thugs
-  private buildThugs() {
-    const thugPositions = [
-      new THREE.Vector3(3.5, 0, 4),
-      new THREE.Vector3(5.0, 0, 5),
-      new THREE.Vector3(3.0, 0, 6.5),
-      new THREE.Vector3(6.0, 0, 7.5)
+  // --- 8. Realistic Thugs & Royal Enfield Style Motorbikes ---
+  private buildRealisticThugsAndBikes() {
+    // 2 Parked Royal Enfield Style Motorbikes
+    this.createMotorbike(4.0, 0, 4.5);
+    this.createMotorbike(6.5, 0, 6.0);
+
+    const thugConfigs = [
+      { x: 3.8, z: 5.5, rot: 0.2 },
+      { x: 5.2, z: 4.8, rot: -0.4 },
+      { x: 4.2, z: 7.2, rot: 0.8 },
+      { x: 6.8, z: 7.8, rot: -0.6 }
     ];
 
-    thugPositions.forEach((pos) => {
-      const group = new THREE.Group();
+    thugConfigs.forEach((cfg) => {
+      const thugGroup = new THREE.Group();
 
-      // Body (Black shirt & denim vest)
-      const body = new THREE.Mesh(
-        new THREE.BoxGeometry(0.7, 1.1, 0.4),
-        new THREE.MeshStandardMaterial({ color: 0x1e293b })
-      );
-      body.position.y = 1.3;
+      // Realistic leather jackets & jeans
+      const jacketMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 });
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.15, 0.45), jacketMat);
+      body.position.y = 1.35;
       body.castShadow = true;
-      group.add(body);
+      thugGroup.add(body);
 
       // Head & Red Bandana
-      const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.28, 12, 12),
-        new THREE.MeshStandardMaterial({ color: 0xb45309 })
-      );
-      head.position.y = 2.0;
-      group.add(head);
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.8 });
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), skinMat);
+      head.position.y = 2.1;
+      head.castShadow = true;
+      thugGroup.add(head);
 
       const bandana = new THREE.Mesh(
-        new THREE.TorusGeometry(0.3, 0.06, 8, 16),
-        new THREE.MeshBasicMaterial({ color: 0xef4444 })
+        new THREE.TorusGeometry(0.32, 0.07, 8, 16),
+        new THREE.MeshStandardMaterial({ color: 0xef4444 })
       );
       bandana.rotation.x = Math.PI / 2;
-      bandana.position.y = 2.15;
-      group.add(bandana);
+      bandana.position.y = 2.22;
+      thugGroup.add(bandana);
 
       // Jeans
-      const legs = new THREE.Mesh(
-        new THREE.BoxGeometry(0.65, 0.8, 0.35),
-        new THREE.MeshStandardMaterial({ color: 0x0369a1 })
-      );
-      legs.position.y = 0.4;
+      const jeansMat = new THREE.MeshStandardMaterial({ color: 0x0369a1, roughness: 0.85 });
+      const legs = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.85, 0.4), jeansMat);
+      legs.position.y = 0.45;
       legs.castShadow = true;
-      group.add(legs);
+      thugGroup.add(legs);
 
-      group.position.copy(pos);
-      this.scene.add(group);
+      thugGroup.position.set(cfg.x, 0, cfg.z);
+      thugGroup.rotation.y = cfg.rot;
+      this.scene.add(thugGroup);
 
       this.thugs.push({
-        group,
+        group: thugGroup,
         alive: true,
         vel: new THREE.Vector3(),
         rotVel: new THREE.Vector3()
@@ -495,7 +732,69 @@ export class MarketScene3D {
     });
   }
 
-  // Kick Coconut Logic
+  private createMotorbike(x: number, y: number, z: number) {
+    const bike = new THREE.Group();
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.95, roughness: 0.1 });
+    const tireMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.9 });
+    const tankMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, metalness: 0.4, roughness: 0.3 });
+
+    // Fuel Tank
+    const tank = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 16), tankMat);
+    tank.scale.set(0.8, 0.7, 1.4);
+    tank.position.set(0, 1.1, 0.2);
+    tank.castShadow = true;
+    bike.add(tank);
+
+    // Chrome Exhaust Pipe
+    const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.0, 12), chromeMat);
+    exhaust.rotation.x = Math.PI / 2;
+    exhaust.position.set(0.35, 0.4, -0.2);
+    bike.add(exhaust);
+
+    // Spoke Wheels
+    const wFront = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.18, 16), tireMat);
+    wFront.rotation.z = Math.PI / 2;
+    wFront.position.set(0, 0.45, 1.2);
+    wFront.castShadow = true;
+    bike.add(wFront);
+
+    const wRear = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.22, 16), tireMat);
+    wRear.rotation.z = Math.PI / 2;
+    wRear.position.set(0, 0.45, -1.0);
+    wRear.castShadow = true;
+    bike.add(wRear);
+
+    bike.position.set(x, y, z);
+    bike.rotation.y = -0.5;
+    this.scene.add(bike);
+  }
+
+  // --- 9. Atmospheric Golden Sun Dust Motes ---
+  private createAtmosphericDust() {
+    const pCount = 200;
+    const pGeo = new THREE.BufferGeometry();
+    const positions = new Float32Array(pCount * 3);
+
+    for (let i = 0; i < pCount * 3; i += 3) {
+      positions[i] = (Math.random() - 0.5) * 50;
+      positions[i + 1] = Math.random() * 12;
+      positions[i + 2] = (Math.random() - 0.5) * 40;
+    }
+
+    pGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const pMat = new THREE.PointsMaterial({
+      color: 0xfef08a,
+      size: 0.12,
+      transparent: true,
+      opacity: 0.5
+    });
+
+    this.dustParticles = new THREE.Points(pGeo, pMat);
+    this.scene.add(this.dustParticles);
+  }
+
+  // --- Core Gameplay Interactions ---
+
   public kickCoconut() {
     if (this.state.coconutKicked) return;
     this.state.coconutKicked = true;
@@ -503,14 +802,14 @@ export class MarketScene3D {
     soundManager.playCoconutKick();
 
     // Coconut rolls towards rickshaw
-    const target = this.rickshawGroup.position.clone().add(new THREE.Vector3(0, 0.35, 0));
+    const target = this.rickshawGroup.position.clone().add(new THREE.Vector3(0, 0.4, 0));
     const start = this.coconutMesh.position.clone();
     let progress = 0;
 
     const interval = setInterval(() => {
       progress += 0.08;
       this.coconutMesh.position.lerpVectors(start, target, progress);
-      this.coconutMesh.rotation.x += 0.4;
+      this.coconutMesh.rotation.x += 0.45;
 
       if (progress >= 1) {
         clearInterval(interval);
@@ -521,7 +820,6 @@ export class MarketScene3D {
     if (this.onDialogue) this.onDialogue('lvl1_rickshaw_ready');
   }
 
-  // Release Rickshaw Handbrake
   private releaseRickshawHandbrake() {
     if (this.state.rickshawRolling) return;
     this.state.rickshawRolling = true;
@@ -533,7 +831,6 @@ export class MarketScene3D {
     soundManager.playRickshawRoll();
   }
 
-  // The 3D Spectacle Flip (Bullet-Time)
   public triggerSpectacleFlip() {
     if (this.state.hukumMode) return;
     this.state.hukumMode = true;
@@ -541,10 +838,10 @@ export class MarketScene3D {
 
     soundManager.playSpectacleFlipBassDrop();
 
-    // 360° Glasses Flip Animation
+    // 360° Aviator Glasses Flip Animation
     let flipAngle = 0;
     const flipInterval = setInterval(() => {
-      flipAngle += 0.6;
+      flipAngle += 0.55;
       if (this.tigerGlasses) {
         this.tigerGlasses.rotation.y = flipAngle;
       }
@@ -554,11 +851,11 @@ export class MarketScene3D {
       }
     }, 16);
 
-    // Call 3D Red Sniper Beams
+    // Call 3D Glowing Red Sniper Laser Beams from distant rooftops
     this.thugs.forEach((thug) => {
-      const beamMat = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 });
+      const beamMat = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 3 });
       const pts = [
-        new THREE.Vector3(thug.group.position.x - 10, 20, thug.group.position.z - 15),
+        new THREE.Vector3(thug.group.position.x - 12, 22, thug.group.position.z - 16),
         thug.group.position.clone().add(new THREE.Vector3(0, 1.8, 0))
       ];
       const beamGeo = new THREE.BufferGeometry().setFromPoints(pts);
@@ -575,31 +872,28 @@ export class MarketScene3D {
   public update(delta: number, keys: { left: boolean; right: boolean; up: boolean; down: boolean }) {
     if (this.state.phase === 'VICTORY' || this.state.phase === 'BUSTED') return;
 
-    // Movement
     this.handleMovement(delta, keys);
-
-    // Viji Patrol & Vision Detection
     this.updateVijiPatrol(delta);
 
     // Rickshaw Incline Rolling
     if (this.state.rickshawRolling && !this.state.fireworksExploded) {
-      this.rickshawGroup.position.x += 0.18;
-      this.rickshawGroup.position.z += 0.32;
-      this.rickshawGroup.rotation.y = 0.65;
+      this.rickshawGroup.position.x += 0.22;
+      this.rickshawGroup.position.z += 0.35;
+      this.rickshawGroup.rotation.y = 0.68;
 
       // Check collision with thugs
       this.thugs.forEach((thug) => {
         if (thug.alive) {
           const dist = this.rickshawGroup.position.distanceTo(thug.group.position);
-          if (dist < 2.5) {
+          if (dist < 2.8) {
             thug.alive = false;
             soundManager.playSniperShot();
             this.state.aura += 1250 * this.state.multiplier;
 
             // Launch thug into air (3D Ragdoll trajectory)
             thug.vel.set(
-              (Math.random() - 0.5) * 8 + 4,
-              12 + Math.random() * 5,
+              (Math.random() - 0.5) * 8 + 5,
+              14 + Math.random() * 6,
               (Math.random() - 0.5) * 8 + 6
             );
             thug.rotVel.set(Math.random() * 8, Math.random() * 8, Math.random() * 8);
@@ -609,7 +903,7 @@ export class MarketScene3D {
 
       // Check collision with fireworks cart
       const distToCart = this.rickshawGroup.position.distanceTo(this.fireworksGroup.position);
-      if (distToCart < 3.2) {
+      if (distToCart < 3.4) {
         this.triggerFireworksExplosion();
       }
     }
@@ -620,7 +914,7 @@ export class MarketScene3D {
         thug.group.position.addScaledVector(thug.vel, delta);
         thug.group.rotation.x += thug.rotVel.x * delta;
         thug.group.rotation.y += thug.rotVel.y * delta;
-        thug.vel.y -= 25 * delta; // Gravity
+        thug.vel.y -= 26 * delta; // Gravity
 
         if (thug.group.position.y < 0.2) {
           thug.group.position.y = 0.2;
@@ -634,7 +928,7 @@ export class MarketScene3D {
     for (let i = this.fireworkParticles.length - 1; i >= 0; i--) {
       const p = this.fireworkParticles[i];
       p.mesh.position.addScaledVector(p.vel, delta);
-      p.vel.y -= 12 * delta; // Gravity
+      p.vel.y -= 14 * delta;
       p.life -= delta;
       if (p.life <= 0) {
         this.scene.remove(p.mesh);
@@ -642,20 +936,24 @@ export class MarketScene3D {
       }
     }
 
-    // Smooth Camera Follow
-    const targetCamX = this.tigerGroup.position.x - 12;
-    const targetCamZ = this.tigerGroup.position.z + 18;
-    this.camera.position.x += (targetCamX - this.camera.position.x) * 0.05;
-    this.camera.position.z += (targetCamZ - this.camera.position.z) * 0.05;
+    // Camera follow with dramatic zoom in Hukum Mode
+    const targetCamX = this.state.hukumMode ? this.tigerGroup.position.x - 8 : this.tigerGroup.position.x - 14;
+    const targetCamY = this.state.hukumMode ? 10 : 16;
+    const targetCamZ = this.state.hukumMode ? this.tigerGroup.position.z + 12 : this.tigerGroup.position.z + 20;
+
+    this.camera.position.x += (targetCamX - this.camera.position.x) * 0.06;
+    this.camera.position.y += (targetCamY - this.camera.position.y) * 0.06;
+    this.camera.position.z += (targetCamZ - this.camera.position.z) * 0.06;
+
     this.camera.lookAt(
-      this.tigerGroup.position.x + 3,
-      1.5,
-      this.tigerGroup.position.z + 2
+      this.tigerGroup.position.x + 2,
+      1.6,
+      this.tigerGroup.position.z + 1
     );
   }
 
   private handleMovement(delta: number, keys: { left: boolean; right: boolean; up: boolean; down: boolean }) {
-    const speed = this.state.hukumMode ? 3.5 : 5.5; // Swagger speed
+    const speed = this.state.hukumMode ? 3.8 : 5.8;
     const move = new THREE.Vector3();
 
     if (keys.left) move.x -= 1;
@@ -668,38 +966,38 @@ export class MarketScene3D {
       this.tigerGroup.position.addScaledVector(move, speed * delta);
       this.tigerGroup.rotation.y = Math.atan2(move.x, move.z);
 
-      // Swagger walking animation
-      this.walkTime += delta * 8;
-      this.tigerArmL.rotation.x = Math.sin(this.walkTime) * 0.4;
-      this.tigerArmR.rotation.x = -Math.sin(this.walkTime) * 0.4;
-      this.tigerGroup.position.y = Math.abs(Math.sin(this.walkTime)) * 0.1;
+      // Mass Swagger Walking Animation
+      this.walkTime += delta * 7.5;
+      this.tigerArmL.rotation.x = Math.sin(this.walkTime) * 0.45;
+      this.tigerArmR.rotation.x = -Math.sin(this.walkTime) * 0.45;
+      this.tigerTorsoGroup.rotation.y = Math.sin(this.walkTime) * 0.08;
+      this.tigerGroup.position.y = Math.abs(Math.sin(this.walkTime)) * 0.08;
     } else {
       this.tigerArmL.rotation.x = 0;
       this.tigerArmR.rotation.x = 0;
+      this.tigerTorsoGroup.rotation.y = 0;
       this.tigerGroup.position.y = 0;
     }
   }
 
   private updateVijiPatrol(delta: number) {
     this.vijiTurnTimer += delta;
-    if (this.vijiTurnTimer > 3.5) {
+    if (this.vijiTurnTimer > 3.6) {
       this.vijiTurnTimer = 0;
       this.vijiAngle = (this.vijiAngle + Math.PI / 2) % (Math.PI * 2);
       this.vijiGroup.rotation.y = this.vijiAngle;
     }
 
-    // Calculate distance and angle to Tiger
+    // Distance and Angle to Tiger
     const toTiger = this.tigerGroup.position.clone().sub(this.vijiGroup.position);
     const dist = toTiger.length();
-
-    // Viji's forward vector
     const forward = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.vijiAngle);
     const dot = forward.dot(toTiger.normalize());
 
-    // If Tiger is inside Viji's vision cone (within 9 units & within 45 degrees)
-    if (dist < 9 && dot > 0.707) {
+    // If Tiger is caught in Viji's spotlight
+    if (dist < 10.5 && dot > 0.65) {
       if (this.state.coconutKicked && !this.state.fireworksExploded) {
-        this.state.vijiSuspicion = Math.min(100, this.state.vijiSuspicion + 40 * delta);
+        this.state.vijiSuspicion = Math.min(100, this.state.vijiSuspicion + 45 * delta);
       } else {
         this.state.vijiSuspicion = Math.max(0, this.state.vijiSuspicion - 10 * delta);
       }
@@ -711,9 +1009,9 @@ export class MarketScene3D {
       this.state.vijiSuspicion = Math.max(0, this.state.vijiSuspicion - 8 * delta);
     }
 
-    // Update vision cone color
+    // Update Spotlight Color
     const coneColor = this.state.vijiSuspicion > 50 ? 0xef4444 : 0xfacc15;
-    (this.vijiVisionMesh.material as THREE.MeshBasicMaterial).color.setHex(coneColor);
+    this.vijiSpotlight.color.setHex(coneColor);
 
     this.notifyState();
   }
@@ -724,35 +1022,33 @@ export class MarketScene3D {
 
     soundManager.playExplosion();
 
-    // Remove sniper beams
     this.sniperBeams.forEach(b => this.scene.remove(b));
     this.sniperBeams = [];
 
-    // Create 3D Exploding Fireworks Particle Fountains
+    // Exploding 3D Fireworks Fountains
     const colors = [0xef4444, 0x3b82f6, 0xfacc15, 0x10b981, 0xa855f7, 0xffffff];
-    for (let i = 0; i < 60; i++) {
-      const pGeo = new THREE.SphereGeometry(0.12 + Math.random() * 0.1, 8, 8);
+    for (let i = 0; i < 75; i++) {
+      const pGeo = new THREE.SphereGeometry(0.14 + Math.random() * 0.1, 8, 8);
       const pMat = new THREE.MeshBasicMaterial({ color: colors[i % colors.length] });
       const p = new THREE.Mesh(pGeo, pMat);
-      p.position.copy(this.fireworksGroup.position).add(new THREE.Vector3(0, 1.5, 0));
+      p.position.copy(this.fireworksGroup.position).add(new THREE.Vector3(0, 1.8, 0));
       this.scene.add(p);
 
       this.fireworkParticles.push({
         mesh: p,
         vel: new THREE.Vector3(
-          (Math.random() - 0.5) * 16,
-          8 + Math.random() * 12,
-          (Math.random() - 0.5) * 16
+          (Math.random() - 0.5) * 18,
+          9 + Math.random() * 14,
+          (Math.random() - 0.5) * 18
         ),
-        life: 1.2 + Math.random() * 0.8
+        life: 1.4 + Math.random() * 0.8
       });
     }
 
-    // Eliminate all thugs
     this.thugs.forEach((thug) => {
       if (thug.alive) {
         thug.alive = false;
-        thug.vel.set((Math.random() - 0.5) * 8, 10 + Math.random() * 6, (Math.random() - 0.5) * 8);
+        thug.vel.set((Math.random() - 0.5) * 8, 12 + Math.random() * 6, (Math.random() - 0.5) * 8);
         thug.rotVel.set(Math.random() * 8, Math.random() * 8, Math.random() * 8);
       }
     });
@@ -803,20 +1099,21 @@ export class MarketScene3D {
       fireworksExploded: false
     };
 
-    this.tigerGroup.position.set(-6, 0, -2);
-    this.rickshawGroup.position.set(-1, 0, -3);
-    this.coconutMesh.position.set(-3.5, 0.35, -2);
+    this.tigerGroup.position.set(-8, 0, -3);
+    this.rickshawGroup.position.set(-1.5, 0, -3);
+    this.coconutMesh.position.set(-4.5, 0.4, -2.5);
 
     this.thugs.forEach((thug, idx) => {
       thug.alive = true;
       thug.group.rotation.set(0, 0, 0);
-      const positions = [
-        new THREE.Vector3(3.5, 0, 4),
-        new THREE.Vector3(5.0, 0, 5),
-        new THREE.Vector3(3.0, 0, 6.5),
-        new THREE.Vector3(6.0, 0, 7.5)
+      const configs = [
+        { x: 3.8, z: 5.5, rot: 0.2 },
+        { x: 5.2, z: 4.8, rot: -0.4 },
+        { x: 4.2, z: 7.2, rot: 0.8 },
+        { x: 6.8, z: 7.8, rot: -0.6 }
       ];
-      thug.group.position.copy(positions[idx]);
+      thug.group.position.set(configs[idx].x, 0, configs[idx].z);
+      thug.group.rotation.y = configs[idx].rot;
     });
 
     this.sniperBeams.forEach(b => this.scene.remove(b));

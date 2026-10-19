@@ -8,6 +8,7 @@ import { VictoryModal } from './components/VictoryModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { LevelSelectModal } from './components/LevelSelectModal';
 import { IntroVideoModal } from './components/IntroVideoModal';
+import { SettingsModal } from './components/SettingsModal';
 import { ThreeGameContainer } from './components/ThreeGameContainer';
 import { ThreeGameManager } from './game/three/ThreeGameManager';
 import { Game3DState } from './game/three/MarketScene3D';
@@ -41,6 +42,7 @@ export const App: React.FC = () => {
   const [dbSaved, setDbSaved] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showLevelSelect, setShowLevelSelect] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [showIntroVideo, setShowIntroVideo] = useState(true); // Open intro on initial load
 
   const currentLevelConfig = LEVELS.find(l => l.id === currentLevelId) || LEVELS[0];
@@ -142,6 +144,7 @@ export const App: React.FC = () => {
         onOpenLeaderboard={() => setShowLeaderboard(true)}
         onOpenLevelSelect={() => setShowLevelSelect(true)}
         onOpenIntroVideo={() => setShowIntroVideo(true)}
+        onOpenSettings={() => setShowSettings(true)}
         currentLevel={currentLevelId}
       />
 
@@ -206,6 +209,11 @@ export const App: React.FC = () => {
       <LeaderboardModal
         isOpen={showLeaderboard}
         onClose={() => setShowLeaderboard(false)}
+      />
+
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
       />
 
       <LevelSelectModal

@@ -8,6 +8,7 @@ interface NavbarAuthProps {
   onOpenLeaderboard: () => void;
   onOpenLevelSelect: () => void;
   onOpenIntroVideo: () => void;
+  onOpenSettings: () => void;
   currentLevel: number;
 }
 
@@ -16,6 +17,7 @@ export const NavbarAuth: React.FC<NavbarAuthProps> = ({
   onOpenLeaderboard,
   onOpenLevelSelect,
   onOpenIntroVideo,
+  onOpenSettings,
   currentLevel
 }) => {
   const [isMuted, setIsMuted] = useState(soundManager.getMuted());
@@ -42,7 +44,7 @@ export const NavbarAuth: React.FC<NavbarAuthProps> = ({
       </div>
 
       {/* Center Controls */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-2.5">
         <button
           onClick={onOpenIntroVideo}
           className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold bg-red-950/70 hover:bg-red-900/80 border border-red-500/40 text-red-300 rounded-lg transition-all animate-pulse"
@@ -67,9 +69,17 @@ export const NavbarAuth: React.FC<NavbarAuthProps> = ({
         </button>
 
         <button
+          onClick={onOpenSettings}
+          className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 rounded-lg transition-all"
+          title="Audio & Graphics Settings"
+        >
+          <span>⚙️ Settings</span>
+        </button>
+
+        <button
           onClick={toggleSound}
           className="p-1.5 text-xs bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 rounded-lg transition-all"
-          title={isMuted ? 'Unmute BGM & SFX' : 'Mute'}
+          title={isMuted ? 'Unmute All' : 'Mute All'}
         >
           {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
         </button>

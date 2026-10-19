@@ -113,36 +113,48 @@ CREATE INDEX IF NOT EXISTS idx_progress_user ON public.level_progress(user_id);
 
 ## 4. Asset & Module Inventory
 
-### 4.1 3D Engine Modules (`src/game/three/`)
-- `ThreeGameManager.ts`: Master Three.js WebGL renderer, perspective camera, shadow maps, ambient & directional lighting, loop orchestrator.
-- `MarketScene3D.ts`: 3D environment builder:
-  - Procedural 3D Asphalt Street with road markings and yellow curb stones.
-  - 3D Tiger Muthuvel Pandian character model (white linen shirt, pleated veshti, silver hair & beard, dark aviator glasses).
-  - 3D Auto-Rickshaw model (hierarchical mesh with yellow canopy, green body, headlights, rotating wheels).
-  - 3D Coconut model with real-time sphere roll physics.
-  - 3D Fireworks Cart with Diwali rocket tubes and dynamic particle explosion emitters.
-  - 3D Thug characters with ragdoll impact animation.
-  - 3D Patrolling Viji model with real-time projected volumetric vision cone light.
-  - 3D Sniper Laser System with glowing red beam crosshairs.
+### 4.1 Realistic 3D Engine Modules (`src/game/three/`)
+- `ThreeGameManager.ts`: Master Three.js WebGL renderer, perspective camera, 4K shadow maps, ACESFilmic tone mapping, ambient & directional lighting, loop orchestrator.
+- `TextureGenerator.ts`: Procedural PBR canvas texture generator:
+  - `createAsphaltTexture()`: 1024x1024 aggregate grain, cracks, yellow double divider lines, zebra pedestrian crosswalk.
+  - `createSidewalkTexture()`: 512x512 cobblestone stone pavers grid with weathered concrete noise.
+  - `createShopSignboardTexture()`: High-contrast Tamil and English shop signboards ("முருகன் டீ ஸ்டால்", "அண்ணாச்சி மளிகை").
+  - `createBrickBuildingTexture()`: 3-story Madras colonial brickwork with arched wooden window shutters and cornices.
+  - `createRickshawDecalTexture()`: Authentic Tamil Nadu yellow license plate (`TN 01 AB 1975`) and tourist decals.
+  - `createFireworkBoxTexture()`: Authentic Diwali cracker box textures ("ANIL CRACKERS 1000 WALA").
+- `MarketScene3D.ts`: Realistic 3D Chennai Market street builder:
+  - 4 Colonial multi-story Madras shop buildings with balconies, parapets, and Tamil typography signboards.
+  - Authentic market stalls with jute tables, hanging banana bunches, wooden tomato crates, and protective charms.
+  - Realistic cast-iron streetlamps casting warm volumetric point lights.
+  - Detailed 3D Tiger Muthuvel Pandian model (Superstar Rajinikanth likeness, styled silver hair, silver salt-and-pepper beard, gold-rimmed aviator sunglasses with dark reflective lenses, white linen bush shirt with collar and chest pocket pen, gold luxury watch, pleated silk dhoti/veshti with gold zari border, leather chappals, and signature mass swagger walk animation).
+  - Detailed 3D Bajaj RE Auto-Rickshaw (curved yellow fiberglass canopy, green chassis, chrome handlebars, instrument speedometer, headlight beam, and rolling wheels).
+  - Realistic 3D Motorbikes (Royal Enfield style chassis, fuel tanks, spoke wheels, and chrome exhaust pipes).
+  - 3D Coconut hazard with rolling physics.
+  - 3D Diwali Fireworks Cart with multi-box particle detonation.
+  - 3D Patrolling Viji model with real-time sweeping spotlight vision beam.
+  - 3D Rooftop sniper lasers with glowing red beam crosshairs.
+  - Atmospheric golden sun dust motes drifting through the air.
 
-### 4.2 Web Audio Synthesizer (`src/game/audio/SoundManager.ts`)
-- `playSpectacleFlipBassDrop()`: Distorted 808 sub-bass pitch drop (140Hz -> 32Hz) with metallic glasses flip chime.
-- `playSniperShot()`: High-frequency filtered noise crack with low-end punch.
-- `playExplosion()`: Low-pass filtered noise burst with exponential decay.
-- `playCoconutKick()`: Triangle-wave hollow thud.
-- `playRickshawRoll()`: Modulated sawtooth engine rev.
-- `playVictoryFanfare()`: Multi-oscillator brass fanfare.
-- `startCinematicBgm()`: 124 BPM driving synth bass pulse.
+### 4.2 Movie Audio Engine (`src/game/audio/SoundManager.ts`)
+- **Multi-Bus Architecture**: Independent `masterGain`, `bgmGain`, and `sfxGain` buses routed through an interactive `bulletTimeFilter` (Biquad low-pass filter).
+- **Independent Toggles & Controls**:
+  - `setMusicEnabled(boolean)` & `setMusicVolume(0..1)`
+  - `setSfxEnabled(boolean)` & `setSfxVolume(0..1)`
+  - State persisted automatically in `localStorage`.
+- **Hukum Theme Synthesizer**: 124 BPM syncopated 16th-note sequencer in E minor with 4-on-the-floor kick, distorted 808 sub-bass riff, and brass horn chord stabs.
+- **Bullet-Time Soundscape**: Low-pass filter sweeps down to 380Hz during the Spectacle Flip to simulate the eye of the storm.
+- **Movie SFX**: High-caliber sniper crack with ricochet reverb tail, 2-stroke Bajaj auto engine rev, Diwali crackers explosive cascade with secondary pops, and hollow coconut thud.
 
 ### 4.3 UI & HUD Components (`src/components/`)
-- `NavbarAuth.tsx`: Top header with player profile, Render DB sync indicator, level select button, sound toggle.
-- `AuraMeterHUD.tsx`: Top-left composure meter, multiplier indicator, Viji vision gauge.
-- `DualSubtitleHUD.tsx`: Bottom-center dialogue box (Tanglish yellow line + English subtitle).
+- `NavbarAuth.tsx`: Top header with player profile, Render DB sync indicator, level select button, sound mute, and **Settings** button.
+- `SettingsModal.tsx`: Dedicated audio and visuals settings panel with independent BGM/SFX toggle switches, volume sliders (0-100%), test buttons, 3D graphics quality options, and subtitle mode preferences.
+- `AuraMeterHUD.tsx`: Top-left composure meter, multiplier indicator (`x1`, `x2`, `x4`, `HUKUM x10`), Viji vision gauge.
+- `DualSubtitleHUD.tsx`: Bottom-center glassmorphic dialogue box with movie character portraits (Rajini, Viji, Vimal, Mathew, Narasimha) and yellow Tanglish + English subtitles.
 - `ActionDeckHUD.tsx`: Bottom-right Spectacle Flip button and tactical hotkeys (`[1]`, `[2]`, `[3]`).
 - `VictoryModal.tsx`: Post-level summary showing stars, aura points, clear times, and PostgreSQL sync status.
 - `LeaderboardModal.tsx`: Live top 25 global rankings fetched directly from Render PostgreSQL.
 - `LevelSelectModal.tsx`: Interactive selector for Chapters 1 through 10.
-- `IntroVideoModal.tsx`: Cinematic introduction video cutscene with mass audio buildup and character introductions.
+- `IntroVideoModal.tsx`: Cinematic 2.35:1 widescreen introduction video cutscene with character art and audio buildup.
 
 ---
 
