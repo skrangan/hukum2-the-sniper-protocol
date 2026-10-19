@@ -129,9 +129,17 @@ export class ThreeGameManager {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, this.marketScene.camera);
 
-    const intersects = raycaster.intersectObject(this.marketScene.coconutMesh);
-    if (intersects.length > 0) {
-      this.marketScene.kickCoconut();
+    if (this.marketScene.coconutMesh) {
+      const intersects = raycaster.intersectObject(this.marketScene.coconutMesh);
+      if (intersects.length > 0) {
+        this.marketScene.kickCoconut();
+        return;
+      }
+    }
+
+    // In Chapter 2 / other chapters, clicking the arena triggers spectacle flip
+    if (this.marketScene.currentChapter > 1) {
+      this.marketScene.triggerSpectacleFlip();
     }
   };
 
@@ -157,6 +165,10 @@ export class ThreeGameManager {
 
   public retry() {
     this.marketScene.retry();
+  }
+
+  public loadChapter(levelNumber: number) {
+    this.marketScene.loadChapter(levelNumber);
   }
 
   public destroy() {

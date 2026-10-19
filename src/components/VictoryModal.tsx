@@ -8,6 +8,9 @@ interface VictoryModalProps {
   onNextLevel: () => void;
   onRetry: () => void;
   dbSaved: boolean;
+  currentLevel?: number;
+  currentLevelTitle?: string;
+  nextLevelTitle?: string;
 }
 
 export const VictoryModal: React.FC<VictoryModalProps> = ({
@@ -16,7 +19,10 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
   clearTimeMs,
   onNextLevel,
   onRetry,
-  dbSaved
+  dbSaved,
+  currentLevel = 1,
+  currentLevelTitle = "Amaithiya Irukkurathu Bayam Illa, Athu En Style",
+  nextLevelTitle = "Moorthy Sir Udane Paakkanumam"
 }) => {
   const seconds = (clearTimeMs / 1000).toFixed(1);
 
@@ -29,10 +35,10 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
         </div>
 
         <h2 className="text-2xl font-black text-yellow-400 font-display uppercase tracking-wider mt-3">
-          MISSION ACCOMPLISHED!
+          CHAPTER {currentLevel} CLEARED!
         </h2>
-        <p className="text-xs text-slate-400 font-medium">
-          "Amaithiya Irukkurathu Bayam Illa, Athu En Style"
+        <p className="text-xs text-yellow-200/80 font-medium italic mt-0.5">
+          "{currentLevelTitle}"
         </p>
 
         {/* Stars */}
@@ -79,20 +85,20 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex space-x-3">
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
           <button
             onClick={onRetry}
-            className="flex-1 flex items-center justify-center space-x-2 py-3 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold rounded-xl transition-all"
+            className="flex-1 flex items-center justify-center space-x-2 py-3 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold rounded-xl transition-all text-xs sm:text-sm"
           >
             <RotateCcw className="w-4 h-4" />
-            <span>Replay</span>
+            <span>Replay Chapter</span>
           </button>
 
           <button
             onClick={onNextLevel}
-            className="flex-1 flex items-center justify-center space-x-2 py-3 bg-gradient-to-r from-yellow-500 to-amber-500 hover:brightness-110 active:scale-95 text-slate-950 font-black rounded-xl shadow-lg transition-all"
+            className="flex-1 flex items-center justify-center space-x-2 py-3 bg-gradient-to-r from-yellow-500 to-amber-500 hover:brightness-110 active:scale-95 text-slate-950 font-black rounded-xl shadow-lg transition-all text-xs sm:text-sm"
           >
-            <span>Next Chapter</span>
+            <span>{currentLevel < 10 ? `Next: Chapter ${currentLevel + 1} - ${nextLevelTitle}` : 'Campaign Victory! 🏆'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

@@ -11,10 +11,10 @@
 ```
 ┌───────────────────────────────────────────────────────────┐
 │              Client Layer (Vite + React 18)               │
-│  - Three.js 3D Canvas (WebGL, Shadows, Dynamic Lighting)  │
-│  - Web Audio API Synthesizer (Anirudh Bass Drops & SFX)   │
+│  - Three.js Dynamic Multi-Chapter 3D WebGL Engine         │
+│  - Web Audio API Synthesizer (Anirudh Hukum Theme & 808s) │
 │  - Dual-Subtitle Engine (Bold Yellow Tanglish + English)  │
-│  - Glassmorphic Action Deck, Aura Meter & Modals          │
+│  - Glassmorphic Action Deck, Aura Meter & Victory Modals  │
 └─────────────────────────────┬─────────────────────────────┘
                               │ REST APIs (JWT Auth)
                               ▼
@@ -99,8 +99,8 @@ CREATE INDEX IF NOT EXISTS idx_progress_user ON public.level_progress(user_id);
 | Level | Title (Tanglish) | Title (English) | Setting | Motive & Set-Piece | Available Cameos |
 |---|---|---|---|---|---|
 | **1** | *"Amaithiya Irukkurathu Bayam Illa, Athu En Style"* | "Being quiet isn't fear, it's just my style." | Neighborhood Market & School Crossing | Kick coconut into auto-rickshaw handbrake -> rolls down incline -> crushes 4 bike thugs -> explodes fireworks cart while dodging wife Viji's vision cone. | `vimal_taxi` |
-| **2** | *"Moorthy Sir Udane Paakkanumam"* | "Moorthy Sir demands an audience with you immediately." | Narrow Suspension Bridge over River | Call distant hill snipers to shoot SUV fuel caps; shockwave bounces car keys to Vimal while Moorthy thinks he intimidated the mob. | `vimal_taxi` |
-| **3** | *"Oru Sun, Oru Moon... Puriyutha?"* | "There's only one Sun and one Moon... Do you get the hierarchy?" | Dusty Highway Tea Stall | Boiling Kettle Rhythm Shootout: Whistle every 4s; disarm 12 machete goons with sniper fire on red steam gauge. | `vimal_taxi` |
+| **2** | *"Moorthy Sir Udane Paakkanumam"* | "Moorthy Sir demands an audience with you immediately." | Narrow Suspension Bridge over River | Call distant hill snipers to shoot 6 SUV fuel caps & tires; shockwave blasts 6 goons flying over bridge cables into the river; bounces car keys to Vimal while Moorthy poses proudly thinking his sheer aura scared them away. | `vimal_taxi` |
+| **3** | *"Oru Sun, Oru Moon... Puriyutha?"* | "There's only one Sun and one Moon... Do you get the hierarchy?" | Dusty Highway Tea Stall | Boiling Kettle Rhythm Shootout: Whistle every 4s; disarm 12 machete goons with sniper fire on red steam gauge while sugarcane trucks frame the road. | `vimal_taxi` |
 | **4** | *"24 Mani Nerathula... Alapara Kelapparom"* | "In 24 hours... we unleash total mayhem." | Kochi Port Container Yard at Night | Hack magnetic cranes to drop shipping containers behind Dileep's armored jeep; hoist jeep onto Madagascar cargo ship. | `vimal_taxi` |
 | **5** | *"Tea-ya, Coffee-ya? Neenga Decide Panna Mudiyathu"* | "Tea or Coffee? You don't even get to decide if you'll survive the sip." | Kantha Kalpak's Portuguese Mansion | Swap poisoned tea cups, spam Kantha's phone with WhatsApp forwards, spin lazy-Susan, reflect sniper laser off teapot to drop chandelier. | `vimal_taxi` |
 | **6** | *"Jailer Mattum Thaan Sniper Vaippana?"* | "Does only the Jailer have a monopoly on snipers?" | Neon Goan Street Carnival & Ferris Wheel | Maneuver Vimal's chrome-hooded taxi and parade mirrors to reflect Bodhi's green laser counter-snipers into his firework trucks. | `vimal_taxi` |
@@ -114,7 +114,7 @@ CREATE INDEX IF NOT EXISTS idx_progress_user ON public.level_progress(user_id);
 ## 4. Asset & Module Inventory
 
 ### 4.1 Realistic 3D Engine Modules (`src/game/three/`)
-- `ThreeGameManager.ts`: Master Three.js WebGL renderer, perspective camera, 4K shadow maps, ACESFilmic tone mapping, ambient & directional lighting, loop orchestrator.
+- `ThreeGameManager.ts`: Master Three.js WebGL renderer, perspective camera, 4K shadow maps, ACESFilmic tone mapping, ambient & directional lighting, loop orchestrator, and `loadChapter(chapterNumber)` dynamic level loader.
 - `TextureGenerator.ts`: Procedural PBR canvas texture generator:
   - `createAsphaltTexture()`: 1024x1024 aggregate grain, cracks, yellow double divider lines, zebra pedestrian crosswalk.
   - `createSidewalkTexture()`: 512x512 cobblestone stone pavers grid with weathered concrete noise.
@@ -122,18 +122,42 @@ CREATE INDEX IF NOT EXISTS idx_progress_user ON public.level_progress(user_id);
   - `createBrickBuildingTexture()`: 3-story Madras colonial brickwork with arched wooden window shutters and cornices.
   - `createRickshawDecalTexture()`: Authentic Tamil Nadu yellow license plate (`TN 01 AB 1975`) and tourist decals.
   - `createFireworkBoxTexture()`: Authentic Diwali cracker box textures ("ANIL CRACKERS 1000 WALA").
-- `MarketScene3D.ts`: Realistic 3D Chennai Market street builder:
-  - 4 Colonial multi-story Madras shop buildings with balconies, parapets, and Tamil typography signboards.
-  - Authentic market stalls with jute tables, hanging banana bunches, wooden tomato crates, and protective charms.
-  - Realistic cast-iron streetlamps casting warm volumetric point lights.
-  - Detailed 3D Tiger Muthuvel Pandian model (Superstar Rajinikanth likeness, styled silver hair, silver salt-and-pepper beard, gold-rimmed aviator sunglasses with dark reflective lenses, white linen bush shirt with collar and chest pocket pen, gold luxury watch, pleated silk dhoti/veshti with gold zari border, leather chappals, and signature mass swagger walk animation).
-  - Detailed 3D Bajaj RE Auto-Rickshaw (curved yellow fiberglass canopy, green chassis, chrome handlebars, instrument speedometer, headlight beam, and rolling wheels).
-  - Realistic 3D Motorbikes (Royal Enfield style chassis, fuel tanks, spoke wheels, and chrome exhaust pipes).
-  - 3D Coconut hazard with rolling physics.
-  - 3D Diwali Fireworks Cart with multi-box particle detonation.
-  - 3D Patrolling Viji model with real-time sweeping spotlight vision beam.
-  - 3D Rooftop sniper lasers with glowing red beam crosshairs.
-  - Atmospheric golden sun dust motes drifting through the air.
+- `MarketScene3D.ts`: Dynamic multi-chapter 3D scene engine:
+  - **Chapter 1 (Chennai Market & School Street)**:
+    - 4 Colonial multi-story Madras shop buildings with balconies, parapets, and Tamil typography signboards.
+    - Authentic market stalls with jute tables, hanging banana bunches, wooden tomato crates, and protective charms.
+    - Realistic cast-iron streetlamps casting warm volumetric point lights.
+    - Detailed 3D Tiger Muthuvel Pandian model (Superstar Rajinikanth likeness, styled silver hair, silver salt-and-pepper beard, gold-rimmed aviator sunglasses with dark reflective lenses, white linen bush shirt with collar and chest pocket pen, gold luxury watch, pleated silk dhoti/veshti with gold zari border, leather chappals, and signature mass swagger walk animation).
+    - Detailed 3D Bajaj RE Auto-Rickshaw (curved yellow fiberglass canopy, green chassis, chrome handlebars, instrument speedometer, headlight beam, and rolling wheels).
+    - Realistic 3D Motorbikes (Royal Enfield style chassis, fuel tanks, spoke wheels, and chrome exhaust pipes).
+    - 3D Coconut hazard with rolling physics.
+    - 3D Diwali Fireworks Cart with multi-box particle detonation.
+    - 3D Patrolling Viji model with real-time sweeping spotlight vision beam.
+  - **Chapter 2 (Narrow Suspension Bridge over River)**:
+    - 64m steel road deck with painted double yellow center lines and white edge markers.
+    - Two 22m A-frame suspension pylon towers with horizontal cross braces.
+    - Parabolic Catmull-Rom steel cables with vertical suspender ropes hanging every 2.5m.
+    - Steel safety lattice railings with red warning reflectors.
+    - Deep blue misty river gorge 10m below (`y = -9.5`) with canyon cliff walls.
+    - Moorthy Sir 3D model (cream-white silk shirt, 24K gold chain necklace, gold aviator sunglasses, pleated trousers, formal shoes, hands-on-hips proud stance).
+    - Moorthy's luxury white sedan parked beside him.
+    - 6 Armored Black Syndicate SUVs in a staggered road block.
+    - 6 Syndicate Goons around the barricade.
+    - Kinetic shockwave physics: Goons launch high in the air and tumble over bridge cables into the river gorge below.
+    - Golden car keys arc across the bridge to Tiger.
+  - **Chapter 3 (Dusty Highway Roadside Tea Stall)**:
+    - Dusty highway tarmac with gravel shoulder and tall grass.
+    - Roadside wooden tea stall shack with corrugated tin roof, counter, and steaming brass kettle.
+    - Two large sugarcane haulage trucks parked on the highway shoulder.
+    - 12 syndicate machete goons disarmed in rhythm.
+  - **Chapters 4 - 10 (Dynamic Themed Tactical Arenas)**:
+    - Kochi Port Container Yard (cranes, shipping containers, night rain).
+    - Portuguese Mansion (marble terrace, pillars, chandeliers).
+    - Goan Street Carnival (neon lights, carnival tents, parade mirrors).
+    - Fortified Safe House Compound (concrete perimeter, sandbags, searchlights).
+    - Luxury Casino Cruise Ship (teak decks, neon swimming pool).
+    - Goa Private Airstrip Runway (runway tarmac, private jet silhouette).
+    - Kalpak Penthouse Helipad (rooftop helipad, city skyline).
 
 ### 4.2 Movie Audio Engine (`src/game/audio/SoundManager.ts`)
 - **Multi-Bus Architecture**: Independent `masterGain`, `bgmGain`, and `sfxGain` buses routed through an interactive `bulletTimeFilter` (Biquad low-pass filter).
@@ -141,7 +165,12 @@ CREATE INDEX IF NOT EXISTS idx_progress_user ON public.level_progress(user_id);
   - `setMusicEnabled(boolean)` & `setMusicVolume(0..1)`
   - `setSfxEnabled(boolean)` & `setSfxVolume(0..1)`
   - State persisted automatically in `localStorage`.
-- **Hukum Theme Synthesizer**: 124 BPM syncopated 16th-note sequencer in E minor with 4-on-the-floor kick, distorted 808 sub-bass riff, and brass horn chord stabs.
+- **Authentic Jailer Hukum Victory Theme**:
+  - Composed by Anirudh Ravichander in E Minor (E3-G3-A3-B3-D4-E4-D4-B3-A3-G3-E3).
+  - Multi-layered stadium brass (sawtooth French horn + detuned square lead trumpet harmonics).
+  - Heavy 808 sub kick drop (160Hz sliding down to 32Hz).
+  - Syncopated stadium claps and trap rhythm.
+  - Automatically silences background tension BGM when victory triggers.
 - **Bullet-Time Soundscape**: Low-pass filter sweeps down to 380Hz during the Spectacle Flip to simulate the eye of the storm.
 - **Movie SFX**: High-caliber sniper crack with ricochet reverb tail, 2-stroke Bajaj auto engine rev, Diwali crackers explosive cascade with secondary pops, and hollow coconut thud.
 
@@ -149,17 +178,21 @@ CREATE INDEX IF NOT EXISTS idx_progress_user ON public.level_progress(user_id);
 - `NavbarAuth.tsx`: Top header with player profile, Render DB sync indicator, level select button, sound mute, and **Settings** button.
 - `SettingsModal.tsx`: Dedicated audio and visuals settings panel with independent BGM/SFX toggle switches, volume sliders (0-100%), test buttons, 3D graphics quality options, and subtitle mode preferences.
 - `AuraMeterHUD.tsx`: Top-left composure meter, multiplier indicator (`x1`, `x2`, `x4`, `HUKUM x10`), Viji vision gauge.
-- `DualSubtitleHUD.tsx`: Bottom-center glassmorphic dialogue box with movie character portraits (Rajini, Viji, Vimal, Mathew, Narasimha) and yellow Tanglish + English subtitles.
+- `DualSubtitleHUD.tsx`: Bottom-center glassmorphic dialogue box with movie character portraits (Rajini, Viji, Vimal, Mathew, Narasimha, Moorthy) and yellow Tanglish + English subtitles.
 - `ActionDeckHUD.tsx`: Bottom-right Spectacle Flip button and tactical hotkeys (`[1]`, `[2]`, `[3]`).
-- `VictoryModal.tsx`: Post-level summary showing stars, aura points, clear times, and PostgreSQL sync status.
+- `VictoryModal.tsx`: Post-level summary showing stars, aura points, clear times, Render PostgreSQL sync status, and direct `Next: Chapter {currentLevel + 1} - {nextLevelTitle}` progression button.
 - `LeaderboardModal.tsx`: Live top 25 global rankings fetched directly from Render PostgreSQL.
-- `LevelSelectModal.tsx`: Interactive selector for Chapters 1 through 10.
-- `IntroVideoModal.tsx`: Cinematic 2.35:1 widescreen introduction prologue directly inspired by the official *Jailer* movie trailer:
-  - **Beat 1 ("The Deceptive Retirement")**: Viji speaks about how harmless and gentle Muthuvel Pandian is (*"Avar romba innocent... yaar koodayum sanda poda maattaru"*).
-  - **Beat 2 ("The Fatal Provocation")**: The crime syndicate foolishly targets the retired cop (*"Oru alavukku mela namma kitta pesave koodathu... aana ivan koodave ninnu pesuraan. Mudichu vidunga avana!"*).
-  - **Beat 3 ("The Monster Awakens")**: Tiger's chilling transformation and past revealed (*"Naan paatha velai vera... ippo paakura velai vera. Oru mudivu eduthutta, pinvaanga maatten"*).
-  - **Beat 4 ("The Pan-India Allies")**: Mathew (Mohanlal) and Narasimha (Shiva Rajkumar) declare their allegiance (*"Tiger sonna... thalaigal urulum. Ivide oru phone call vandhal, Chennai-ye ratha kaadaa maarum"*).
-  - **Beat 5 ("The Final Verdict")**: Anirudh bass drop and iconic title punchline (*"Alappara Kelapparom! Thambi... unna maadhiri ethanayo per-ah paathavan naan. HUKUM... TIGER KA HUKUM!"*).
+- `LevelSelectModal.tsx`: Interactive selector for Chapters 1 through 10 with lock/unlock status and star counters.
+- `IntroVideoModal.tsx`: Cinematic 2.35:1 widescreen introduction prologue directly inspired by the official *Jailer* movie trailer.
+
+### 4.4 High-Resolution Movie Portrait Assets (`public/assets/portraits/`)
+- `tiger.jpg`: Superstar Rajinikanth as Tiger Muthuvel Pandian.
+- `viji.jpg`: Ramya Krishnan as Viji.
+- `moorthy.jpg`: VTV Ganesh as Moorthy Sir (cream-white silk shirt, gold chain, gold aviator sunglasses).
+- `vimal.jpg`: Yogi Babu style getaway taxi driver.
+- `mathew.jpg`: Mohanlal style underworld kingpin ally.
+- `narasimha.jpg`: Shiva Rajkumar style syndicate enforcer ally.
+- `poster.jpg`: *Hukum 2: The Sniper Protocol* official movie-style teaser poster.
 
 ---
 
