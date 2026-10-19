@@ -31,6 +31,10 @@ export const ThreeGameContainer: React.FC<ThreeGameContainerProps> = ({
     );
     gameManagerRef.current = manager;
 
+    if (currentLevel && currentLevel > 1) {
+      manager.loadChapter(currentLevel);
+    }
+
     return () => {
       manager.destroy();
       gameManagerRef.current = null;
