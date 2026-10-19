@@ -1,5 +1,7 @@
 import React from 'react';
+import { Volume2 } from 'lucide-react';
 import dialoguesData from '../data/dialogues.json';
+import { soundManager } from '../game/audio/SoundManager';
 
 interface DualSubtitleHUDProps {
   dialogueKey: string | null;
@@ -15,7 +17,6 @@ export const DualSubtitleHUD: React.FC<DualSubtitleHUDProps> = ({
   const dialogue = (dialoguesData.dialogues as any)[dialogueKey];
   if (!dialogue) return null;
 
-  // Portrait image mapping
   const getPortraitSrc = (portrait: string) => {
     switch (portrait) {
       case 'tiger_smirk':
@@ -35,42 +36,70 @@ export const DualSubtitleHUD: React.FC<DualSubtitleHUDProps> = ({
     }
   };
 
+  const getRoleTitle = (speaker: string) => {
+    switch (speaker) {
+      case 'TIGER':
+        return 'MUTHUVEL PANDIAN // THE RETIRED JAILER';
+      case 'VIJI':
+        return 'VIJI PANDIAN // DOMESTIC SURVEILLANCE';
+      case 'VIMAL':
+        return 'VIMAL // GOA TOURIST TAXI CORPS';
+      case 'NARASIMHA':
+        return 'NARASIMHA // MANDYA SYNDICATE KINGPIN';
+      case 'MATHEW':
+        return 'MATHEW // KERALA OVERLORD';
+      default:
+        return 'FIELD TRANSMISSION // ENCRYPTED';
+    }
+  };
+
   return (
     <div
-      onClick={onDismiss}
-      className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 w-11/12 max-w-2xl cursor-pointer select-none"
+      onClick={() => {
+        soundManager.playUiClick();
+        if (onDismiss) onDismiss();
+      }}
+      data-testid="dual-subtitle-hud"
+      className="absolute bottom-5 left-5 sm:left-1/2 sm:-translate-x-1/2 z-30 w-11/12 max-w-xl cursor-pointer select-none"
     >
-      <div className="bg-slate-900/90 backdrop-blur-md border-2 border-yellow-500/40 rounded-2xl p-4 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-start space-x-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-        {/* Character Portrait Box */}
-        <div className="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 border-yellow-500/50 shadow-md bg-slate-950 flex items-center justify-center">
+      <div className="relative bg-slate-950/92 backdrop-blur-xl border border-amber-500/45 rounded-2xl p-3.5 shadow-[0_15px_45px_rgba(0,0,0,0.9)] flex items-center space-x-3.5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+        {/* Top Anamorphic Accent Line */}
+        <div className="absolute top-0 inset-x-8 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+
+        {/* Realistic Character Portrait Frame */}
+        <div className="relative flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 border-amber-400/60 shadow-lg bg-slate-900">
           <img
             src={getPortraitSrc(dialogue.portrait)}
             alt={dialogue.speaker}
-            className="w-full h-full object-cover object-top"
+            className="w-full h-full object-cover object-top filter contrast-115"
           />
+          <div className="absolute bottom-0 inset-x-0 bg-black/75 text-[8px] font-mono text-amber-300 text-center uppercase py-0.5">
+            {dialogue.speaker}
+          </div>
         </div>
 
         {/* Dual Subtitles Content */}
-        <div className="flex-1 text-left">
-          {/* Speaker Name Tag */}
-          <div className="text-[10px] font-black uppercase tracking-widest text-yellow-500 font-display">
-            {dialogue.speaker}
+        <div className="flex-1 text-left min-w-0">
+          {/* Speaker Role Tag */}
+          <div className="flex items-center space-x-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-amber-400/90">
+            <Volume2 className="w-3 h-3 text-amber-400" />
+            <span className="truncate">{getRoleTitle(dialogue.speaker)}</span>
           </div>
 
           {/* Primary Line: Bold Yellow Tanglish */}
-          <div className="text-base sm:text-lg font-bold text-yellow-300 font-dialogue leading-snug mt-0.5">
+          <div className="text-sm sm:text-base font-bold text-amber-300 font-dialogue leading-snug mt-0.5">
             "{dialogue.tanglish}"
           </div>
 
           {/* Secondary Line: Crisp White/Cyan English Subtitle */}
-          <div className="text-xs sm:text-sm font-medium text-slate-300 mt-1 italic">
+          <div className="text-xs font-medium text-slate-300 mt-0.5 italic leading-snug">
             "{dialogue.english}"
           </div>
         </div>
 
-        {/* Click to continue hint */}
-        <div className="flex-shrink-0 self-end text-[10px] text-slate-500 uppercase tracking-widest animate-pulse">
-          TAP ▾
+        {/* Dismiss indicator */}
+        <div className="flex-shrink-0 self-end text-[9px] font-mono text-slate-500 uppercase tracking-widest">
+          [DISMISS]
         </div>
       </div>
     </div>

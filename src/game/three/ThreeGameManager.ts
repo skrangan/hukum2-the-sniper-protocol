@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { MarketScene3D, Game3DState } from './MarketScene3D';
+import { soundManager } from '../audio/SoundManager';
 
 export class ThreeGameManager {
   private container: HTMLElement;
@@ -25,14 +26,14 @@ export class ThreeGameManager {
     this.container = container;
     this.clock = new THREE.Clock();
 
-    // WebGL Renderer with High Quality Shadows
+    // WebGL Renderer with High Quality Shadows & Filmic Tone Mapping
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.1;
+    this.renderer.toneMappingExposure = 1.15;
 
     container.appendChild(this.renderer.domElement);
 
@@ -51,7 +52,7 @@ export class ThreeGameManager {
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
 
-    // Raycast click for 3D interactions (e.g. clicking coconut)
+    // Raycast click for 3D interactions (e.g. clicking coconut) + starting BGM on first interaction
     this.renderer.domElement.addEventListener('pointerdown', this.onPointerDown);
   }
 
@@ -65,6 +66,7 @@ export class ThreeGameManager {
   };
 
   private onKeyDown = (e: KeyboardEvent) => {
+    soundManager.startCinematicBgm();
     switch (e.code) {
       case 'ArrowLeft':
       case 'KeyA':
@@ -90,10 +92,13 @@ export class ThreeGameManager {
         this.marketScene.kickCoconut();
         break;
       case 'Digit1':
-        this.marketScene.triggerSpectacleFlip();
+        this.marketScene.pingSniperTargets();
         break;
       case 'Digit2':
         this.marketScene.kickCoconut();
+        break;
+      case 'Digit3':
+        this.marketScene.summonCameo();
         break;
     }
   };
@@ -120,6 +125,8 @@ export class ThreeGameManager {
   };
 
   private onPointerDown = (e: MouseEvent) => {
+    soundManager.startCinematicBgm();
+
     const rect = this.renderer.domElement.getBoundingClientRect();
     const mouse = new THREE.Vector2(
       ((e.clientX - rect.left) / rect.width) * 2 - 1,
@@ -129,7 +136,7 @@ export class ThreeGameManager {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, this.marketScene.camera);
 
-    const intersects = raycaster.intersectObject(this.marketScene.coconutMesh);
+    const intersects = raycaster.intersectObject(this.marketScene.coconutMesh, true);
     if (intersects.length > 0) {
       this.marketScene.kickCoconut();
     }
@@ -148,11 +155,31 @@ export class ThreeGameManager {
   };
 
   public triggerSpectacleFlip() {
+    soundManager.startCinematicBgm();
     this.marketScene.triggerSpectacleFlip();
   }
 
+  public pingSniperTargets() {
+    soundManager.startCinematicBgm();
+    this.marketScene.pingSniperTargets();
+  }
+
   public kickCoconut() {
+    soundManager.startCinematicBgm();
     this.marketScene.kickCoconut();
+  }
+
+  public summonCameo(cameoId?: string) {
+    soundManager.startCinematicBgm();
+    this.marketScene.summonCameo(cameoId);
+  }
+
+  public setChapterAtmosphere(levelId: number) {
+    this.marketScene.setChapterAtmosphere(levelId);
+  }
+
+  public setTigerAttire(attireId: string) {
+    this.marketScene.setTigerAttire(attireId);
   }
 
   public retry() {

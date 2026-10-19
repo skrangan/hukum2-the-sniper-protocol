@@ -1,85 +1,132 @@
 import React from 'react';
-import { Flame, Eye, Compass } from 'lucide-react';
+import { Flame, Eye, Compass, Crosshair } from 'lucide-react';
 import { GameEventData } from '../game/scenes/MarketLevelScene';
 
 interface AuraMeterHUDProps {
   gameData: GameEventData;
   levelTitle: string;
+  levelSetting?: string;
   objective: string;
 }
 
 export const AuraMeterHUD: React.FC<AuraMeterHUDProps> = ({
   gameData,
   levelTitle,
+  levelSetting = "Neighborhood Market & Rithu's School Street",
   objective
 }) => {
   return (
-    <div className="absolute top-16 left-6 z-30 flex flex-col space-y-2 pointer-events-none select-none max-w-sm">
-      {/* Composure & Aura Score Panel */}
-      <div className="bg-slate-900/85 backdrop-blur-md border border-slate-700/80 rounded-xl p-3 shadow-2xl">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1">
-            <Flame className="w-3.5 h-3.5 text-yellow-400" />
-            <span>TIGER COMPOSURE</span>
-          </span>
-          <span className={`text-xs font-black px-2 py-0.5 rounded-full font-mono ${
-            gameData.multiplier >= 10
-              ? 'bg-red-600 text-white animate-pulse-fast'
-              : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-          }`}>
-            {gameData.multiplier >= 10 ? '🔥 HUKUM x10' : `x${gameData.multiplier} MULT`}
-          </span>
+    <div className="absolute top-16 left-5 z-30 flex flex-col space-y-2.5 pointer-events-none select-none w-80 sm:w-96">
+      {/* Main Operator Dossier & Composure Telemetry Card */}
+      <div className="bg-slate-950/90 backdrop-blur-xl border border-amber-500/35 rounded-2xl p-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.85)]">
+        <div className="flex items-center space-x-3 mb-2.5">
+          {/* Realistic Character Portrait Frame */}
+          <div className="relative w-13 h-13 rounded-xl overflow-hidden border-2 border-amber-400/70 shadow-lg flex-shrink-0 bg-slate-900">
+            <img
+              src="/assets/portraits/tiger.jpg"
+              alt="Muthuvel Pandian"
+              className="w-12 h-12 object-cover object-top filter contrast-115"
+            />
+            <span
+              className={`absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full border border-slate-950 ${
+                gameData.hukumMode ? 'bg-red-500 animate-ping' : 'bg-emerald-400'
+              }`}
+            />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-400">
+                OP-01 // TIGER PANDIAN
+              </span>
+              <span
+                className={`text-[10px] font-black px-2 py-0.5 rounded-md font-mono uppercase tracking-wider ${
+                  gameData.multiplier >= 10
+                    ? 'bg-red-600/90 text-white border border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.6)] animate-pulse'
+                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                }`}
+              >
+                {gameData.multiplier >= 10 ? 'HUKUM x10' : `AURA x${gameData.multiplier}`}
+              </span>
+            </div>
+
+            <div className="flex items-baseline justify-between mt-1">
+              <span className="text-xs font-bold text-slate-300 uppercase tracking-wide flex items-center space-x-1">
+                <Flame className="w-3.5 h-3.5 text-amber-400" />
+                <span>Composure</span>
+              </span>
+              <span className="text-lg font-black text-amber-400 font-mono tracking-wider">
+                {gameData.aura.toLocaleString()} <span className="text-[10px] text-slate-400">PTS</span>
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Composure Bar */}
-        <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden p-0.5 border border-slate-800">
+        {/* Composure Stability Bar */}
+        <div className="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-800">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-300 transition-all duration-300 shadow-[0_0_12px_rgba(250,204,21,0.5)]"
+            className="h-full rounded-full bg-gradient-to-r from-amber-600 via-amber-400 to-yellow-300 transition-all duration-300 shadow-[0_0_12px_rgba(250,204,21,0.5)]"
             style={{ width: `${gameData.composure}%` }}
           />
         </div>
 
-        {/* Aura Points Display */}
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-800">
-          <span className="text-[11px] text-slate-400">Score</span>
-          <span className="text-base font-black text-yellow-400 font-mono tracking-wider">
-            {gameData.aura.toLocaleString()} PTS
-          </span>
-        </div>
-      </div>
-
-      {/* Viji Suspicion Gauge */}
-      <div className="bg-slate-900/85 backdrop-blur-md border border-slate-700/80 rounded-xl p-2.5 shadow-xl">
-        <div className="flex items-center justify-between text-[11px] font-bold text-slate-300 mb-1">
-          <span className="flex items-center space-x-1">
-            <Eye className={`w-3.5 h-3.5 ${gameData.vijiSuspicion > 50 ? 'text-red-500 animate-bounce' : 'text-slate-400'}`} />
-            <span>VIJI VISION DETECTION</span>
-          </span>
-          <span className={`font-mono text-xs ${gameData.vijiSuspicion > 50 ? 'text-red-400 font-bold' : 'text-slate-400'}`}>
-            {gameData.vijiSuspicion}%
-          </span>
-        </div>
-        <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden p-0.5 border border-slate-800">
-          <div
-            className={`h-full rounded-full transition-all duration-200 ${
-              gameData.vijiSuspicion > 75
-                ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]'
-                : gameData.vijiSuspicion > 40
-                ? 'bg-amber-500'
-                : 'bg-emerald-500'
-            }`}
-            style={{ width: `${gameData.vijiSuspicion}%` }}
+        {/* Viji Domestic Surveillance Radar */}
+        <div className="mt-2.5 pt-2.5 border-t border-slate-800/90 flex items-center space-x-2.5">
+          <img
+            src="/assets/portraits/viji.jpg"
+            alt="Viji Surveillance"
+            className="w-8 h-8 rounded-lg object-cover object-top border border-rose-500/40 flex-shrink-0"
           />
+          <div className="flex-1">
+            <div className="flex items-center justify-between text-[10px] font-mono uppercase mb-1">
+              <span className="flex items-center space-x-1 text-slate-300 font-bold">
+                <Eye
+                  className={`w-3 h-3 ${
+                    gameData.vijiSuspicion > 50 ? 'text-red-500 animate-bounce' : 'text-amber-400'
+                  }`}
+                />
+                <span>VIJI LINE-OF-SIGHT RADAR</span>
+              </span>
+              <span
+                className={`font-bold ${
+                  gameData.vijiSuspicion > 50 ? 'text-red-400' : 'text-emerald-400'
+                }`}
+              >
+                {gameData.vijiSuspicion}% {gameData.vijiSuspicion > 50 ? 'ALERT' : 'CLEAR'}
+              </span>
+            </div>
+            <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
+              <div
+                className={`h-full rounded-full transition-all duration-200 ${
+                  gameData.vijiSuspicion > 75
+                    ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]'
+                    : gameData.vijiSuspicion > 40
+                    ? 'bg-amber-500'
+                    : 'bg-emerald-500'
+                }`}
+                style={{ width: `${Math.max(4, gameData.vijiSuspicion)}%` }}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Objective Card */}
-      <div className="bg-slate-900/70 backdrop-blur-sm border border-slate-800 rounded-lg p-2 text-left">
-        <div className="flex items-center space-x-1 text-[10px] text-yellow-400 font-bold uppercase">
-          <Compass className="w-3 h-3" />
-          <span>{levelTitle}</span>
+      {/* Tactical Directive & Location Telemetry */}
+      <div className="bg-slate-950/85 backdrop-blur-lg border border-slate-800/90 rounded-2xl p-3 text-left shadow-xl">
+        <div className="flex items-center justify-between text-[10px] font-mono text-amber-400 uppercase tracking-wider">
+          <span className="flex items-center space-x-1 font-bold">
+            <Compass className="w-3.5 h-3.5 text-amber-400" />
+            <span className="truncate max-w-[210px]">{levelSetting}</span>
+          </span>
+          <span className="flex items-center space-x-1 text-red-400">
+            <Crosshair className="w-3 h-3" />
+            <span>{gameData.phase}</span>
+          </span>
         </div>
-        <p className="text-[11px] text-slate-300 font-medium leading-tight mt-0.5">
+        <div className="text-xs font-bold text-amber-200 font-dialogue italic mt-1 leading-tight">
+          "{levelTitle}"
+        </div>
+        <p className="text-[11px] text-slate-300 font-medium leading-snug mt-1">
           {objective}
         </p>
       </div>

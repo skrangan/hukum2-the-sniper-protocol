@@ -8,11 +8,15 @@ import { VictoryModal } from './components/VictoryModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { LevelSelectModal } from './components/LevelSelectModal';
 import { IntroVideoModal } from './components/IntroVideoModal';
+import { InventoryModal } from './components/InventoryModal';
+import { AudioSettingsModal } from './components/AudioSettingsModal';
 import { ThreeGameContainer } from './components/ThreeGameContainer';
 import { ThreeGameManager } from './game/three/ThreeGameManager';
 import { Game3DState } from './game/three/MarketScene3D';
 import { ApiClient, UserProfile, LevelProgress } from './api/client';
 import { LEVELS } from './data/levelsConfig';
+import { InventoryItem } from './data/inventoryData';
+import { soundManager } from './game/audio/SoundManager';
 
 export const App: React.FC = () => {
   const threeGameManagerRef = useRef<ThreeGameManager | null>(null);
@@ -35,15 +39,34 @@ export const App: React.FC = () => {
     fireworksExploded: false
   });
 
+  // Loadout & Inventory State
+  const [equippedGearId, setEquippedGearId] = useState<string>('sniper_designator');
+  const [equippedCameoId, setEquippedCameoId] = useState<string>('mathew_mercedes');
+  const [equippedAttireId, setEquippedAttireId] = useState<string>('driver_veshti');
+
+  // Modals & Overlays
   const [activeDialogue, setActiveDialogue] = useState<string | null>('lvl1_intro');
   const [showVictory, setShowVictory] = useState(false);
   const [victoryDetails, setVictoryDetails] = useState<any>(null);
   const [dbSaved, setDbSaved] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showLevelSelect, setShowLevelSelect] = useState(false);
-  const [showIntroVideo, setShowIntroVideo] = useState(true); // Open intro on initial load
+  const [showInventory, setShowInventory] = useState(false);
+  const [showAudioSettings, setShowAudioSettings] = useState(false);
+  const [showIntroVideo, setShowIntroVideo] = useState(true);
 
-  const currentLevelConfig = LEVELS.find(l => l.id === currentLevelId) || LEVELS[0];
+  const currentLevelConfig = LEVELS.find((l) => l.id === currentLevelId) || LEVELS[0];
+
+  // Keyboard shortcut [I] for Inventory & [M] for Audio Settings
+  useEffect(() => {
+    const handleGlobalKeys = (e: KeyboardEvent) => {
+      if (e.code === 'KeyI') {
+        setShowInventory((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeys);
+    return () => window.removeEventListener('keydown', handleGlobalKeys);
+  }, []);
 
   // Initialize or Restore Player from Render PostgreSQL Database
   useEffect(() => {
@@ -55,7 +78,6 @@ export const App: React.FC = () => {
           setProfile(data.profile);
           setProgress(data.progress || []);
         } else {
-          // Automatic seamless guest login if no token yet
           const data = await ApiClient.guestLogin();
           setProfile(data.profile);
         }
@@ -73,10 +95,15 @@ export const App: React.FC = () => {
     initPlayer();
   }, []);
 
-  // Handle Spectacle Flip Trigger from ActionDeck or Spacebar
   const handleFlipSpecs = () => {
     if (threeGameManagerRef.current) {
       threeGameManagerRef.current.triggerSpectacleFlip();
+    }
+  };
+
+  const handleSniperPing = () => {
+    if (threeGameManagerRef.current) {
+      threeGameManagerRef.current.pingSniperTargets();
     }
   };
 
@@ -86,13 +113,45 @@ export const App: React.FC = () => {
     }
   };
 
-  // Level Completion Handler (Sync with Render PostgreSQL)
+  const handleCameoSummon = () => {
+    if (threeGameManagerRef.current) {
+      threeGameManagerRef.current.summonCameo(equippedCameoId);
+    }
+  };
+
+  const handleEquipItem = (item: InventoryItem) => {
+    if (item.category === 'GEAR' || item.category === 'HAZARD') {
+      setEquippedGearId(item.id);
+    } else if (item.category === 'CAMEO') {
+      setEquippedCameoId(item.id);
+    } else if (item.category === 'ATTIRE') {
+      setEquippedAttireId(item.id);
+      if (threeGameManagerRef.current) {
+        threeGameManagerRef.current.setTigerAttire(item.id);
+      }
+    }
+  };
+
+  const handleDeployAction = (item: InventoryItem) => {
+    handleEquipItem(item);
+    if (item.id === 'gold_aviators') {
+      handleFlipSpecs();
+    } else if (item.id === 'sniper_designator') {
+      handleSniperPing();
+    } else if (item.id === 'pollachi_coconut' || item.id === 'vimal_taxi') {
+      handleTaxiDrift();
+    } else if (item.category === 'CAMEO') {
+      if (threeGameManagerRef.current) {
+        threeGameManagerRef.current.summonCameo(item.id);
+      }
+    }
+  };
+
   const handleLevelCompleted = async (summary: any) => {
     setVictoryDetails(summary);
     setShowVictory(true);
     setDbSaved(false);
 
-    // Dazzling Victory Confetti
     confetti({
       particleCount: 120,
       spread: 90,
@@ -107,7 +166,7 @@ export const App: React.FC = () => {
         starsEarned: summary.starsEarned || 3,
         clearTimeMs: summary.clearTimeMs,
         spectacleFlipsUsed: summary.spectacleFlipsUsed || 1,
-        cameosUsed: summary.cameosUsed || []
+        cameosUsed: summary.cameosUsed || [equippedCameoId]
       });
 
       if (res.profile) {
@@ -129,6 +188,24 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleSelectChapter = (id: number) => {
+    setCurrentLevelId(id);
+    setShowVictory(false);
+    if (threeGameManagerRef.current) {
+      threeGameManagerRef.current.setChapterAtmosphere(id);
+      threeGameManagerRef.current.retry();
+    }
+    const dialogueMap: Record<number, string> = {
+      1: 'lvl1_intro',
+      2: 'lvl2_intro',
+      3: 'lvl3_intro',
+      4: 'lvl4_intro',
+      7: 'lvl7_cameo_narasimha',
+      10: 'lvl10_finale'
+    };
+    setActiveDialogue(dialogueMap[id] || 'lvl1_intro');
+  };
+
   const handleNextLevel = () => {
     setShowVictory(false);
     setShowLevelSelect(true);
@@ -142,6 +219,8 @@ export const App: React.FC = () => {
         onOpenLeaderboard={() => setShowLeaderboard(true)}
         onOpenLevelSelect={() => setShowLevelSelect(true)}
         onOpenIntroVideo={() => setShowIntroVideo(true)}
+        onOpenInventory={() => setShowInventory(true)}
+        onOpenAudioSettings={() => setShowAudioSettings(true)}
         currentLevel={currentLevelId}
       />
 
@@ -166,6 +245,7 @@ export const App: React.FC = () => {
             activeDialogueKey: null
           }}
           levelTitle={currentLevelConfig.titleTanglish}
+          levelSetting={currentLevelConfig.setting}
           objective={currentLevelConfig.motive}
         />
 
@@ -175,12 +255,15 @@ export const App: React.FC = () => {
           onDismiss={() => setActiveDialogue(null)}
         />
 
-        {/* Bottom-Right Spectacle Flip & Hotkey Deck */}
+        {/* Bottom-Right Spectacle Flip & Tactical Loadout Deck */}
         <ActionDeckHUD
           onFlipSpecs={handleFlipSpecs}
           isHukumMode={gameData.hukumMode}
-          onSniperPing={handleFlipSpecs}
+          onSniperPing={handleSniperPing}
           onTaxiDrift={handleTaxiDrift}
+          onCameoSummon={handleCameoSummon}
+          onOpenInventory={() => setShowInventory(true)}
+          equippedCameoId={equippedCameoId}
         />
       </main>
 
@@ -188,10 +271,30 @@ export const App: React.FC = () => {
       <IntroVideoModal
         isOpen={showIntroVideo}
         onClose={() => setShowIntroVideo(false)}
-        onStartGame={() => setShowIntroVideo(false)}
+        onStartGame={() => {
+          soundManager.startCinematicBgm('stealth');
+          setShowIntroVideo(false);
+        }}
       />
 
-      {/* Modals */}
+      {/* Tactical Inventory & Loadout Modal */}
+      <InventoryModal
+        isOpen={showInventory}
+        onClose={() => setShowInventory(false)}
+        equippedGearId={equippedGearId}
+        equippedCameoId={equippedCameoId}
+        equippedAttireId={equippedAttireId}
+        onEquipItem={handleEquipItem}
+        onDeployAction={handleDeployAction}
+      />
+
+      {/* Audio & Soundstage Settings Modal (Distinct Music & SFX Toggles) */}
+      <AudioSettingsModal
+        isOpen={showAudioSettings}
+        onClose={() => setShowAudioSettings(false)}
+      />
+
+      {/* Victory Modal */}
       {showVictory && victoryDetails && (
         <VictoryModal
           score={victoryDetails.auraScore}
@@ -211,10 +314,7 @@ export const App: React.FC = () => {
       <LevelSelectModal
         isOpen={showLevelSelect}
         onClose={() => setShowLevelSelect(false)}
-        onSelectLevel={(id) => {
-          setCurrentLevelId(id);
-          handleRetry();
-        }}
+        onSelectLevel={handleSelectChapter}
         highestUnlocked={profile?.highest_level_unlocked || 1}
         progressList={progress}
       />
