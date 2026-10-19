@@ -31,8 +31,6 @@ export const DualSubtitleHUD: React.FC<DualSubtitleHUDProps> = ({
         return '/assets/portraits/narasimha.jpg';
       case 'mathew_cigar':
         return '/assets/portraits/mathew.jpg';
-      case 'moorthy_clueless':
-        return '/assets/portraits/moorthy.jpg';
       default:
         return '/assets/portraits/tiger.jpg';
     }

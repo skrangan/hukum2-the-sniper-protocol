@@ -42,40 +42,12 @@
       "english": "Tiger! 6 SUVs are blocking the bridge... Should I flex my political influence?",
       "sfx": "moorthy_gasp"
     },
-    "lvl2_spec_flip": {
-      "speaker": "TIGER",
-      "portrait": "tiger_glasses_flip",
-      "tanglish": "Moorthy Sir, unga aalu bayandhutanunga... Hill Snipers, Execute Protocol HUKUM!",
-      "english": "Moorthy Sir, your aura terrified them... Hill snipers, execute Protocol HUKUM!",
-      "sfx": "hukum_bass_drop"
-    },
-    "lvl2_victory": {
-      "speaker": "MOORTHY",
-      "portrait": "moorthy_clueless",
-      "tanglish": "Paathiya Tiger! Oru phone call, anju nimisham... Six SUVs flat-u! En power purinjatha?",
-      "english": "See that Tiger! One phone call, five minutes... Six SUVs wiped out! Did you grasp my power?",
-      "sfx": "moorthy_laugh"
-    },
     "lvl3_intro": {
       "speaker": "TIGER",
       "portrait": "tiger_smirk",
       "tanglish": "Thambi... Tea innum varala, aana unga aalunga ellam kilambittanga.",
       "english": "Bro... My tea hasn't even arrived yet, and your boys have already left the planet.",
       "sfx": "tea_kettle_whistle"
-    },
-    "lvl3_spec_flip": {
-      "speaker": "TIGER",
-      "portrait": "tiger_glasses_flip",
-      "tanglish": "Oru Sun, Oru Moon... Adhe maadhiri Tamilnadu-kku ore oru Tiger. HUKUM!",
-      "english": "One Sun, One Moon... In the same way, there is only one Tiger. HUKUM!",
-      "sfx": "hukum_bass_drop"
-    },
-    "lvl3_victory": {
-      "speaker": "TIGER",
-      "portrait": "tiger_coffee",
-      "tanglish": "Tea nalla irukku thambi. Vimal, vandiya edu, adutha location polam!",
-      "english": "The tea is excellent. Vimal, start the taxi, let's head to the next hideout!",
-      "sfx": "tiger_chuckle"
     },
     "lvl4_intro": {
       "speaker": "DILEEP",

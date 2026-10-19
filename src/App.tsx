@@ -181,16 +181,6 @@ export const App: React.FC = () => {
     }
   };
 
-  const loadLevel = (levelId: number) => {
-    setCurrentLevelId(levelId);
-    setShowVictory(false);
-    setShowLevelSelect(false);
-    setActiveDialogue(`lvl${levelId}_intro`);
-    if (threeGameManagerRef.current) {
-      threeGameManagerRef.current.loadChapter(levelId);
-    }
-  };
-
   const handleRetry = () => {
     setShowVictory(false);
     if (threeGameManagerRef.current) {
@@ -218,8 +208,7 @@ export const App: React.FC = () => {
 
   const handleNextLevel = () => {
     setShowVictory(false);
-    const nextId = Math.min(10, currentLevelId + 1);
-    loadLevel(nextId);
+    setShowLevelSelect(true);
   };
 
   return (
@@ -314,20 +303,12 @@ export const App: React.FC = () => {
           onNextLevel={handleNextLevel}
           onRetry={handleRetry}
           dbSaved={dbSaved}
-          currentLevel={currentLevelId}
-          currentLevelTitle={currentLevelConfig.titleTanglish}
-          nextLevelTitle={LEVELS.find(l => l.id === currentLevelId + 1)?.titleTanglish || 'Campaign Finale'}
         />
       )}
 
       <LeaderboardModal
         isOpen={showLeaderboard}
         onClose={() => setShowLeaderboard(false)}
-      />
-
-      <SettingsModal
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
       />
 
       <LevelSelectModal

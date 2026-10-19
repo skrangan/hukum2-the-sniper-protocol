@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { soundManager } from '../audio/SoundManager';
-import { TextureGenerator } from './TextureGenerator';
 
 export interface Game3DState {
   aura: number;
@@ -18,15 +17,11 @@ export class MarketScene3D {
   public scene: THREE.Scene;
   public camera: THREE.PerspectiveCamera;
 
-  // Active Chapter Index (1 - 10)
-  public currentChapter: number = 1;
-
-  // Persistent & Chapter-Specific Groups
-  public chapterGroup: THREE.Group = new THREE.Group();
+  // Characters & Entities
   public tigerGroup: THREE.Group = new THREE.Group();
   public vijiGroup: THREE.Group = new THREE.Group();
   public rickshawGroup: THREE.Group = new THREE.Group();
-  public coconutMesh: THREE.Mesh | null = null;
+  public coconutMesh!: THREE.Mesh;
   public fireworksGroup: THREE.Group = new THREE.Group();
   public cameoVehicleGroup: THREE.Group = new THREE.Group();
   public environmentGroup: THREE.Group = new THREE.Group();
@@ -50,18 +45,12 @@ export class MarketScene3D {
   private rimLight!: THREE.DirectionalLight;
   private streetLights: THREE.PointLight[] = [];
 
-  // Chapter 2 & 3 Specific Actors & Props
-  public moorthyGroup: THREE.Group = new THREE.Group();
-  public carKeyMesh: THREE.Mesh | null = null;
-  public teaKettleMesh: THREE.Mesh | null = null;
-
-  // Chapter 1 Vision Spotlight (Viji)
-  private vijiSpotlight!: THREE.SpotLight;
-  private vijiSpotlightTarget!: THREE.Object3D;
+  // Vision Cone
+  private vijiVisionMesh!: THREE.Mesh;
   private vijiAngle: number = 0;
   private vijiTurnTimer: number = 0;
 
-  // Live Game State
+  // State
   public state: Game3DState = {
     aura: 0,
     multiplier: 1,
@@ -128,8 +117,7 @@ export class MarketScene3D {
     this.buildThugs();
     this.buildAtmosphericEmbers();
 
-    // Default to Chapter 1 on startup
-    this.loadChapter(1);
+    this.startTime = Date.now();
   }
 
   private generateRealisticTextures() {
@@ -803,35 +791,6 @@ export class MarketScene3D {
       stall.add(silkStack);
     }
 
-    // Items on Display
-    items.forEach(item => {
-      if (item.name === 'bananas') {
-        // Hanging green/yellow plantain bunch
-        const bunch = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.2, 0.35, 0.8, 8),
-          new THREE.MeshStandardMaterial({ color: 0xca8a04, roughness: 0.5 })
-        );
-        bunch.position.set(item.x, item.y, item.z);
-        stall.add(bunch);
-      } else if (item.name === 'tomatoes') {
-        // Wooden crate with red tomatoes
-        const crate = new THREE.Mesh(
-          new THREE.BoxGeometry(0.8, 0.25, 0.6),
-          new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.4 })
-        );
-        crate.position.set(item.x, item.y, item.z);
-        stall.add(crate);
-      } else if (item.name === 'coconuts') {
-        // Brown coconut basket
-        const basket = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.4, 0.3, 0.35, 12),
-          new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 })
-        );
-        basket.position.set(item.x, item.y, item.z);
-        stall.add(basket);
-      }
-    });
-
     stall.position.set(x, y, z);
     this.environmentGroup.add(stall);
   }
@@ -1038,7 +997,6 @@ export class MarketScene3D {
   // Detailed Articulated 3D Model: "Tiger" Muthuvel Pandian (Superstar Rajinikanth in Jailer)
   private buildTigerCharacter() {
     this.tigerGroup = new THREE.Group();
-    this.tigerTorsoGroup = new THREE.Group();
 
     const skinMat = new THREE.MeshStandardMaterial({ color: 0xc68b59, roughness: 0.55 });
     const shirtMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.48 });
@@ -1080,7 +1038,7 @@ export class MarketScene3D {
     head.scale.set(0.94, 1.08, 0.98);
     head.position.y = 2.6;
     head.castShadow = true;
-    this.tigerTorsoGroup.add(head);
+    this.tigerGroup.add(head);
 
     // Salt-and-Pepper Side-Swept Hair
     const hairMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.8 });
@@ -1684,12 +1642,7 @@ export class MarketScene3D {
   }
 
   public kickCoconut() {
-    if (this.currentChapter !== 1) {
-      this.triggerSpectacleFlip();
-      return;
-    }
-
-    if (this.state.coconutKicked || !this.coconutMesh) return;
+    if (this.state.coconutKicked) return;
     this.state.coconutKicked = true;
 
     soundManager.playCoconutKick();
@@ -1781,8 +1734,8 @@ export class MarketScene3D {
             this.state.aura += 1250 * this.state.multiplier;
 
             thug.vel.set(
-              (Math.random() - 0.5) * 8 + 5,
-              14 + Math.random() * 6,
+              (Math.random() - 0.5) * 8 + 4,
+              12 + Math.random() * 5,
               (Math.random() - 0.5) * 8 + 6
             );
             thug.rotVel.set(Math.random() * 8, Math.random() * 8, Math.random() * 8);
@@ -1791,7 +1744,7 @@ export class MarketScene3D {
       });
 
       const distToCart = this.rickshawGroup.position.distanceTo(this.fireworksGroup.position);
-      if (distToCart < 3.4) {
+      if (distToCart < 3.2) {
         this.triggerFireworksExplosion();
       }
     }
@@ -1803,10 +1756,8 @@ export class MarketScene3D {
         thug.group.rotation.y += thug.rotVel.y * delta;
         thug.vel.y -= 25 * delta;
 
-        // In Chapter 2, goons fall over bridge cables into the river gorge below!
-        const groundY = this.currentChapter === 2 ? -9.5 : 0.2;
-        if (thug.group.position.y < groundY) {
-          thug.group.position.y = groundY;
+        if (thug.group.position.y < 0.2) {
+          thug.group.position.y = 0.2;
           thug.vel.set(0, 0, 0);
           thug.rotVel.set(0, 0, 0);
         }
@@ -1863,24 +1814,16 @@ export class MarketScene3D {
     } else {
       this.tigerArmL.rotation.x = 0;
       this.tigerArmR.rotation.x = 0;
-      this.tigerTorsoGroup.rotation.y = 0;
       this.tigerGroup.position.y = 0;
-    }
-
-    // Constraint limits on Bridge (Chapter 2) so Tiger doesn't fall off
-    if (this.currentChapter === 2) {
-      this.tigerGroup.position.x = Math.max(-28, Math.min(28, this.tigerGroup.position.x));
-      this.tigerGroup.position.z = Math.max(-3.4, Math.min(3.4, this.tigerGroup.position.z));
     }
   }
 
   private updateVijiPatrol(delta: number) {
-    if (!this.vijiSpotlight) return;
-
     this.vijiTurnTimer += delta;
-    if (this.vijiTurnTimer > 3.6) {
+    if (this.vijiTurnTimer > 3.5) {
       this.vijiTurnTimer = 0;
-      this.vijiAngle = this.vijiAngle === 0 ? Math.PI : 0;
+      this.vijiAngle = (this.vijiAngle + Math.PI / 2) % (Math.PI * 2);
+      this.vijiGroup.rotation.y = this.vijiAngle;
     }
 
     const toTiger = this.tigerGroup.position.clone().sub(this.vijiGroup.position);
@@ -1904,7 +1847,7 @@ export class MarketScene3D {
     }
 
     const coneColor = this.state.vijiSuspicion > 50 ? 0xef4444 : 0xfacc15;
-    this.vijiSpotlight.color.setHex(coneColor);
+    (this.vijiVisionMesh.material as THREE.MeshBasicMaterial).color.setHex(coneColor);
 
     this.notifyState();
   }
@@ -1925,7 +1868,7 @@ export class MarketScene3D {
       const pGeo = new THREE.SphereGeometry(0.12 + Math.random() * 0.12, 8, 8);
       const pMat = new THREE.MeshBasicMaterial({ color: colors[i % colors.length] });
       const p = new THREE.Mesh(pGeo, pMat);
-      p.position.copy(this.fireworksGroup.position).add(new THREE.Vector3(0, 1.8, 0));
+      p.position.copy(this.fireworksGroup.position).add(new THREE.Vector3(0, 1.5, 0));
       this.scene.add(p);
 
       this.fireworkParticles.push({
@@ -1942,7 +1885,7 @@ export class MarketScene3D {
     this.thugs.forEach((thug) => {
       if (thug.alive) {
         thug.alive = false;
-        thug.vel.set((Math.random() - 0.5) * 8, 12 + Math.random() * 6, (Math.random() - 0.5) * 8);
+        thug.vel.set((Math.random() - 0.5) * 8, 10 + Math.random() * 6, (Math.random() - 0.5) * 8);
         thug.rotVel.set(Math.random() * 8, Math.random() * 8, Math.random() * 8);
       }
     });
@@ -1952,18 +1895,12 @@ export class MarketScene3D {
     }, 1500);
   }
 
-  // --- VICTORY PROTOCOL (BLASTS THE JAILER THEME BY ANIRUDH) ---
   private triggerVictory() {
     this.state.phase = 'VICTORY';
-    const baseAura = [0, 5000, 7500, 10000, 12500, 15000, 18000, 22000, 25000, 30000, 50000][this.currentChapter] || 5000;
-    this.state.aura += baseAura * this.state.multiplier;
+    this.state.aura += 5000 * this.state.multiplier;
+    soundManager.playVictoryFanfare();
 
-    // Blast the authentic, iconic Jailer Theme by Anirudh Ravichander
-    soundManager.playJailerThemeVictory();
-
-    if (this.onDialogue) {
-      this.onDialogue(`lvl${this.currentChapter}_victory`);
-    }
+    if (this.onDialogue) this.onDialogue('lvl1_victory');
 
     if (this.onVictory) {
       this.onVictory({

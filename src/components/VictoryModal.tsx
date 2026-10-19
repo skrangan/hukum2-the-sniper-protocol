@@ -9,9 +9,6 @@ interface VictoryModalProps {
   onNextLevel: () => void;
   onRetry: () => void;
   dbSaved: boolean;
-  currentLevel?: number;
-  currentLevelTitle?: string;
-  nextLevelTitle?: string;
 }
 
 export const VictoryModal: React.FC<VictoryModalProps> = ({
@@ -20,10 +17,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
   clearTimeMs,
   onNextLevel,
   onRetry,
-  dbSaved,
-  currentLevel = 1,
-  currentLevelTitle = "Amaithiya Irukkurathu Bayam Illa, Athu En Style",
-  nextLevelTitle = "Moorthy Sir Udane Paakkanumam"
+  dbSaved
 }) => {
   const seconds = (clearTimeMs / 1000).toFixed(1);
 
@@ -93,7 +87,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+        <div className="flex space-x-3">
           <button
             onClick={() => {
               soundManager.playUiClick();
@@ -102,7 +96,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
             className="flex-1 flex items-center justify-center space-x-2 py-3 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold rounded-xl transition-all"
           >
             <RotateCcw className="w-4 h-4" />
-            <span>Replay Chapter</span>
+            <span>Replay</span>
           </button>
 
           <button
@@ -112,7 +106,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
             }}
             className="flex-1 flex items-center justify-center space-x-2 py-3 bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 active:scale-95 text-slate-950 font-black rounded-xl shadow-lg transition-all"
           >
-            <span>{currentLevel < 10 ? `Next: Chapter ${currentLevel + 1} - ${nextLevelTitle}` : 'Campaign Victory! 🏆'}</span>
+            <span>Next Chapter</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

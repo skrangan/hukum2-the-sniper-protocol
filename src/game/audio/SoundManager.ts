@@ -106,7 +106,6 @@ class SoundManager {
 
       this.applyGainValues();
     }
-
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {});
     }
@@ -281,133 +280,18 @@ class SoundManager {
     osc.stop(t + 0.085);
   }
 
-  // --- Bullet-Time Audio Filter ---
-  public setBulletTime(active: boolean) {
-    this.initCtx();
-    if (!this.bulletTimeFilter || !this.ctx) return;
-    const t = this.ctx.currentTime;
-    if (active) {
-      // Muffler sweep like inside the eye of the storm
-      this.bulletTimeFilter.frequency.exponentialRampToValueAtTime(380, t + 0.35);
-    } else {
-      this.bulletTimeFilter.frequency.exponentialRampToValueAtTime(20000, t + 0.3);
-    }
-  }
-
-  // --- Iconic Anirudh "HUKUM" Theme Sequencer ---
-  public startCinematicBgm() {
-    if (this.isPlayingBgm) return;
-    this.initCtx();
-    if (!this.ctx) return;
-
-    this.isPlayingBgm = true;
-    this.beatStep = 0;
-
-    const bpm = 124;
-    const stepDuration = (60 / bpm) / 4; // 16th notes
-
-    // The iconic Hukum Bass & Brass progression (Key of E Minor)
-    // Riff frequencies
-    const noteE1 = 41.2;
-    const noteE2 = 82.41;
-    const noteG2 = 98.0;
-    const noteA2 = 110.0;
-    const noteB2 = 123.47;
-    const noteD3 = 146.83;
-
-    const schedulePattern = () => {
-      if (!this.isPlayingBgm || !this.ctx) return;
-      const t = this.ctx.currentTime;
-
-      // Every 16 steps = 1 measure (4 beats)
-      const step = this.beatStep % 16;
-
-      // 1. Heavy 4-on-the-Floor Kick on beats 0, 4, 8, 12
-      if (step % 4 === 0 && this.isMusicEnabled) {
-        const kickOsc = this.ctx.createOscillator();
-        const kickGain = this.ctx.createGain();
-        kickOsc.type = 'sine';
-        kickOsc.frequency.setValueAtTime(140, t);
-        kickOsc.frequency.exponentialRampToValueAtTime(38, t + 0.12);
-
-        kickGain.gain.setValueAtTime(0.5, t);
-        kickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
-
-        kickOsc.connect(kickGain);
-        kickGain.connect(this.bgmGain!);
-        kickOsc.start(t);
-        kickOsc.stop(t + 0.25);
-      }
-
-      // 2. Hukum Syncopated Distorted Bassline
-      const bassNotes = [noteE1, 0, noteE1, noteE1, 0, noteG2, 0, noteE1, 0, noteA2, 0, noteG2, noteE1, 0, noteD3, noteB2];
-      const currentNote = bassNotes[step];
-
-      if (currentNote > 0 && this.isMusicEnabled) {
-        const bassOsc = this.ctx.createOscillator();
-        const bassGain = this.ctx.createGain();
-        bassOsc.type = 'sawtooth';
-        bassOsc.frequency.setValueAtTime(currentNote, t);
-
-        bassGain.gain.setValueAtTime(0.3, t);
-        bassGain.gain.exponentialRampToValueAtTime(0.01, t + stepDuration * 1.5);
-
-        bassOsc.connect(bassGain);
-        bassGain.connect(this.bgmGain!);
-        bassOsc.start(t);
-        bassOsc.stop(t + stepDuration * 1.6);
-      }
-
-      // 3. Mass Brass Horn Stabs (on key accents)
-      if ((step === 0 || step === 3 || step === 6 || step === 10) && this.isMusicEnabled) {
-        [1.0, 1.5, 2.0].forEach((mult) => {
-          const brassOsc = this.ctx!.createOscillator();
-          const brassGain = this.ctx!.createGain();
-          brassOsc.type = 'sawtooth';
-          brassOsc.frequency.setValueAtTime(noteE2 * mult, t);
-
-          brassGain.gain.setValueAtTime(0.12, t);
-          brassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-
-          brassOsc.connect(brassGain);
-          brassGain.connect(this.bgmGain!);
-          brassOsc.start(t);
-          brassOsc.stop(t + 0.2);
-        });
-      }
-
-      this.beatStep++;
-      this.bgmTimeoutId = window.setTimeout(schedulePattern, stepDuration * 1000);
-    };
-
-    schedulePattern();
-  }
-
-  public stopCinematicBgm() {
-    this.isPlayingBgm = false;
-    if (this.bgmTimeoutId !== null) {
-      clearTimeout(this.bgmTimeoutId);
-      this.bgmTimeoutId = null;
-    }
-  }
-
-  // --- Cinematic Movie Sound Effects (SFX) ---
-
-  // 1. The 360° Spectacle Flip Bass Drop
+  // Iconic Mass Glasses Flip Bass Drop (Anirudh Hukum style)
   public playSpectacleFlipBassDrop() {
     this.setTheme('hukum');
     const dest = this.getSfxDest();
     if (!dest || !this.ctx) return;
 
     const t = this.ctx.currentTime;
-    this.setBulletTime(true);
 
     // 1. Heavy Pitch-dropping 808 Sub-Bass + Brass Growl
     const subOsc = this.ctx.createOscillator();
     const subGain = this.ctx.createGain();
-    subOsc.type = 'sine';
-    subOsc.frequency.setValueAtTime(160, t);
-    subOsc.frequency.exponentialRampToValueAtTime(28, t + 1.1);
+    const distortion = this.ctx.createWaveShaper();
 
     subOsc.type = 'sawtooth';
     subOsc.frequency.setValueAtTime(155, t);
@@ -427,8 +311,6 @@ class SoundManager {
     distortion.connect(subGain);
     subGain.connect(dest);
 
-    subOsc.connect(subGain);
-    subGain.connect(this.sfxGain!);
     subOsc.start(t);
     subOsc.stop(t + 1.5);
 
@@ -575,8 +457,8 @@ class SoundManager {
       output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.38));
     }
 
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = noiseBuffer;
+    const whiteNoise = this.ctx.createBufferSource();
+    whiteNoise.buffer = noiseBuffer;
 
     const filter = this.ctx.createBiquadFilter();
     filter.type = 'lowpass';
@@ -587,7 +469,7 @@ class SoundManager {
     gain.gain.setValueAtTime(0.95, t);
     gain.gain.exponentialRampToValueAtTime(0.01, t + 1.15);
 
-    noise.connect(filter);
+    whiteNoise.connect(filter);
     filter.connect(gain);
     gain.connect(dest);
     whiteNoise.start(t);
@@ -703,7 +585,7 @@ class SoundManager {
     });
   }
 
-  // 6. Suspicion Alert Ping
+  // Whistle / Alert SFX
   public playAlert() {
     const dest = this.getSfxDest();
     if (!dest || !this.ctx) return;
@@ -740,8 +622,8 @@ class SoundManager {
       const gain = this.ctx.createGain();
       const t = this.ctx.currentTime + idx * 0.095;
 
-    // Stop background tension BGM so the triumphant Hukum anthem takes full stage
-    this.stopCinematicBgm();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, t);
 
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(2400, t);
