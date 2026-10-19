@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: hukum2-game
+    name: hukum
     runtime: node
     plan: free
     region: oregon
