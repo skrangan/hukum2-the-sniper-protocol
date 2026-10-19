@@ -15,7 +15,8 @@ export const IntroVideoModal: React.FC<IntroVideoModalProps> = ({
 }) => {
   const [sceneIndex, setSceneIndex] = useState(0);
 
-  const scenes = [
+  // Directly inspired by the iconic Jailer Movie Trailer & Official Showcase
+  const trailerScenes = [
     {
       badge: 'CHAPTER PROLOGUE • MYLAPORE, CHENNAI',
       headline: 'A RETIRED JAILER IN PEACE',
@@ -65,11 +66,10 @@ export const IntroVideoModal: React.FC<IntroVideoModalProps> = ({
 
   if (!isOpen) return null;
 
-  const currentScene = scenes[sceneIndex];
+  const current = trailerScenes[sceneIndex];
 
   const handleNext = () => {
-    if (sceneIndex < scenes.length - 1) {
-      soundManager.playAlert();
+    if (sceneIndex < trailerScenes.length - 1) {
       setSceneIndex(sceneIndex + 1);
     } else {
       soundManager.playSpectacleFlipBassDrop();
@@ -90,6 +90,7 @@ export const IntroVideoModal: React.FC<IntroVideoModalProps> = ({
           <Crosshair className="w-4 h-4 text-red-500" />
           <span>JAILER 2: HUKUM • STORY PROLOGUE</span>
         </div>
+
         <button
           onClick={() => {
             soundManager.playUiClick();
@@ -126,15 +127,16 @@ export const IntroVideoModal: React.FC<IntroVideoModalProps> = ({
             </div>
           </div>
 
-          {/* Cinematic Titles & Dual Subtitles */}
+          {/* Cinematic Dialogue & Trailer Typography */}
           <div className="flex-1 text-left space-y-4">
             <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold tracking-widest uppercase">
               <Sparkles className="w-3 h-3" />
               <span>{currentScene.badge}</span>
             </div>
 
-            <h2 className="text-3xl md:text-5xl font-black text-white font-display uppercase tracking-wider leading-none drop-shadow-lg">
-              {currentScene.headline}
+            {/* Headline */}
+            <h2 className="text-3xl md:text-5xl font-black text-white font-display uppercase tracking-wider leading-none drop-shadow-xl">
+              {current.title}
             </h2>
 
             {/* Dual Tanglish + English Subtitle Box */}
@@ -147,7 +149,7 @@ export const IntroVideoModal: React.FC<IntroVideoModalProps> = ({
               </div>
             </div>
 
-            {/* Scene Progression Dots & Action */}
+            {/* Beat Progress Dots & Action Buttons */}
             <div className="flex items-center justify-between pt-4">
               <div className="flex space-x-2">
                 {scenes.map((sc, idx) => (

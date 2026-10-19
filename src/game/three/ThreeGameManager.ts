@@ -186,6 +186,10 @@ export class ThreeGameManager {
     this.marketScene.retry();
   }
 
+  public loadChapter(levelNumber: number) {
+    this.marketScene.loadChapter(levelNumber);
+  }
+
   public destroy() {
     if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
