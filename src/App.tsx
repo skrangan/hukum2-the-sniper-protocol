@@ -58,7 +58,7 @@ export const App: React.FC = () => {
   const [showLevelSelect, setShowLevelSelect] = useState(false);
   const [showInventory, setShowInventory] = useState(false);
   const [showAudioSettings, setShowAudioSettings] = useState(false);
-  const [showIntroVideo, setShowIntroVideo] = useState(true);
+  const [showIntroVideo, setShowIntroVideo] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const handleLoginSuccess = (newProfile: UserProfile, newProgress?: LevelProgress[]) => {
@@ -66,17 +66,23 @@ export const App: React.FC = () => {
     if (newProgress && newProgress.length > 0) {
       setProgress(newProgress);
     }
+    // Restore from last played level or highest unlocked level
+    const restoredLevel = newProfile.last_played_level || newProfile.highest_level_unlocked || 1;
+    const clamped = Math.max(1, Math.min(10, restoredLevel));
+    handleSelectChapter(clamped);
+    setShowAuthModal(false);
+
+    // If player has already played past level 1, skip intro video directly to action
+    if (clamped > 1) {
+      setShowIntroVideo(false);
+    }
   };
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     ApiClient.clearToken();
-    try {
-      const guest = await ApiClient.guestLogin();
-      setProfile(guest.profile);
-      setProgress([]);
-    } catch (e) {
-      console.error('Failed to reset to guest:', e);
-    }
+    setProfile(null);
+    setProgress([]);
+    setShowAuthModal(true);
   };
 
   const currentLevelConfig = LEVELS.find((l) => l.id === currentLevelId) || LEVELS[0];
@@ -101,18 +107,43 @@ export const App: React.FC = () => {
           const data = await ApiClient.getProfile();
           setProfile(data.profile);
           setProgress(data.progress || []);
+
+          // Restore from last played level or highest unlocked level
+          const restoredLevel = data.profile.last_played_level || data.profile.highest_level_unlocked || 1;
+          const clampedId = ((restoredLevel - 1) % 10) + 1;
+          setCurrentLevelId(clampedId);
+          if (threeGameManagerRef.current) {
+            threeGameManagerRef.current.loadChapter(clampedId);
+          }
+          const dialogueMap: Record<number, string> = {
+            1: 'lvl1_intro',
+            2: 'lvl2_intro',
+            3: 'lvl3_intro',
+            4: 'lvl4_intro',
+            5: 'lvl5_intro',
+            6: 'lvl6_intro',
+            7: 'lvl7_intro',
+            8: 'lvl8_intro',
+            9: 'lvl9_intro',
+            10: 'lvl10_intro'
+          };
+          setActiveDialogue(dialogueMap[clampedId] || 'lvl1_intro');
+          setShowAuthModal(false);
+
+          // If returning player already advanced, do not pop prologue
+          if (clampedId > 1) {
+            setShowIntroVideo(false);
+          }
         } else {
-          const data = await ApiClient.guestLogin();
-          setProfile(data.profile);
+          // Gate the game: User MUST sign up or sign in to enter
+          setProfile(null);
+          setShowAuthModal(true);
         }
       } catch (e) {
-        console.warn('Initializing guest fallback session:', e);
-        try {
-          const guest = await ApiClient.guestLogin();
-          setProfile(guest.profile);
-        } catch (err) {
-          console.error('Database connection error:', err);
-        }
+        console.warn('Session expired or invalid, requiring authentication:', e);
+        ApiClient.clearToken();
+        setProfile(null);
+        setShowAuthModal(true);
       }
     };
 
@@ -233,6 +264,10 @@ export const App: React.FC = () => {
     if (threeGameManagerRef.current) {
       threeGameManagerRef.current.loadChapter(clampedId);
     }
+    // Persist current active level so player always restores from this chapter
+    ApiClient.setActiveLevel(clampedId).catch((err) =>
+      console.warn('Could not sync active chapter to cloud:', err)
+    );
     const dialogueMap: Record<number, string> = {
       1: 'lvl1_intro',
       2: 'lvl2_intro',

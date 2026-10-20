@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { query } from '../db.js';
 import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
 
@@ -83,6 +84,115 @@ router.post('/google', async (req, res) => {
   } catch (err: any) {
     console.error('Error in /api/auth/google:', err);
     return res.status(500).json({ error: 'Internal server error during Google sign-in' });
+  }
+});
+
+// Operative Sign-Up with Email & Passcode
+router.post('/register', async (req, res) => {
+  try {
+    const { email, password, displayName } = req.body;
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: 'A valid operative email address is required.' });
+    }
+    if (!password || password.length < 4) {
+      return res.status(400).json({ error: 'Passcode must be at least 4 characters.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = (displayName || cleanEmail.split('@')[0]).trim();
+
+    // Check if user already exists
+    const existing = await query('SELECT id FROM public.profiles WHERE LOWER(email) = $1', [cleanEmail]);
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ error: 'An operative account with this email already exists. Please sign in.' });
+    }
+
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+    const storedPassword = `${salt}:${hash}`;
+    const userId = `u_${crypto.randomBytes(8).toString('hex')}`;
+    const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanEmail}`;
+
+    await query(`
+      INSERT INTO public.profiles (id, email, display_name, password_hash, avatar_url, highest_level_unlocked, last_played_level, last_login_at)
+      VALUES ($1, $2, $3, $4, $5, 1, 1, NOW())
+    `, [userId, cleanEmail, cleanName, storedPassword, avatarUrl]);
+
+    await query(`
+      INSERT INTO public.player_unlocks (user_id)
+      VALUES ($1)
+      ON CONFLICT (user_id) DO NOTHING;
+    `, [userId]);
+
+    const sessionToken = jwt.sign(
+      { id: userId, email: cleanEmail, displayName: cleanName, avatarUrl },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    const profileRes = await query('SELECT * FROM public.profiles WHERE id = $1', [userId]);
+
+    return res.json({
+      token: sessionToken,
+      profile: profileRes.rows[0],
+      progress: []
+    });
+  } catch (err: any) {
+    console.error('Error in /api/auth/register:', err);
+    return res.status(500).json({ error: 'Registration failed: ' + (err.message || 'Database error') });
+  }
+});
+
+// Operative Sign-In with Email & Passcode
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and passcode are required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const userRes = await query('SELECT * FROM public.profiles WHERE LOWER(email) = $1', [cleanEmail]);
+    if (userRes.rows.length === 0) {
+      return res.status(401).json({ error: 'No operative dossier found with this email. Please sign up.' });
+    }
+
+    const user = userRes.rows[0];
+
+    // Check if user is a Google-only user with no password
+    if (!user.password_hash) {
+      return res.status(401).json({
+        error: 'This dossier is linked with Google Sign-In. Please click "Continue with Google".'
+      });
+    }
+
+    const [salt, expectedHash] = user.password_hash.split(':');
+    const computedHash = crypto.scryptSync(password, salt, 64).toString('hex');
+    if (computedHash !== expectedHash) {
+      return res.status(401).json({ error: 'Incorrect passcode. Verification failed.' });
+    }
+
+    await query('UPDATE public.profiles SET last_login_at = NOW() WHERE id = $1', [user.id]);
+
+    const sessionToken = jwt.sign(
+      { id: user.id, email: user.email, displayName: user.display_name, avatarUrl: user.avatar_url },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    const progressRes = await query(
+      'SELECT * FROM public.level_progress WHERE user_id = $1 ORDER BY level_number ASC',
+      [user.id]
+    );
+
+    return res.json({
+      token: sessionToken,
+      profile: user,
+      progress: progressRes.rows
+    });
+  } catch (err: any) {
+    console.error('Error in /api/auth/login:', err);
+    return res.status(500).json({ error: 'Authentication failed: ' + (err.message || 'Server error') });
   }
 });
 

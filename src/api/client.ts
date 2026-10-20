@@ -10,6 +10,7 @@ export interface UserProfile {
   preferred_subtitle_mode: string;
   total_aura_score: string | number;
   highest_level_unlocked: number;
+  last_played_level?: number;
 }
 
 export interface LevelProgress {
@@ -73,16 +74,50 @@ export class ApiClient {
     return data;
   }
 
+  public static async register(email: string, password: string, displayName?: string) {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, displayName })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Registration failed');
+    this.setToken(data.token);
+    return data;
+  }
+
+  public static async login(email: string, password: string) {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+    this.setToken(data.token);
+    return data;
+  }
+
   public static async googleLogin(credential: string) {
     const res = await fetch(`${API_BASE}/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ credential })
     });
-    if (!res.ok) throw new Error('Google sign-in failed');
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Google sign-in failed');
     this.setToken(data.token);
     return data;
+  }
+
+  public static async setActiveLevel(levelNumber: number) {
+    const res = await fetch(`${API_BASE}/player/active-level`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ levelNumber })
+    });
+    if (!res.ok) return null;
+    return res.json();
   }
 
   public static async getProfile(): Promise<{ profile: UserProfile; progress: LevelProgress[]; unlocks: PlayerUnlocks }> {

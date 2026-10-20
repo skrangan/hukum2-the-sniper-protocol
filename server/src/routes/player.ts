@@ -49,13 +49,14 @@ router.post('/save-level', authMiddleware, async (req: AuthenticatedRequest, res
       JSON.stringify(cameosUsed || [])
     ]);
 
-    // Recalculate total aura score and unlock next level
+    // Recalculate total aura score, update last played level, and unlock next level
     const nextLevel = Math.min(10, levelNumber + 1);
 
     await query(`
       UPDATE public.profiles
       SET 
         highest_level_unlocked = GREATEST(highest_level_unlocked, $1),
+        last_played_level = $1,
         total_aura_score = (
           SELECT COALESCE(SUM(best_aura_score), 0)
           FROM public.level_progress
@@ -80,6 +81,28 @@ router.post('/save-level', authMiddleware, async (req: AuthenticatedRequest, res
   } catch (err) {
     console.error('Error in /api/player/save-level:', err);
     return res.status(500).json({ error: 'Failed to save level progress' });
+  }
+});
+
+// Update Last Played Level so player always restores from their last session
+router.post('/active-level', authMiddleware, async (req: AuthenticatedRequest, res) => {
+  try {
+    const userId = req.user!.id;
+    const { levelNumber } = req.body;
+    if (!levelNumber || levelNumber < 1 || levelNumber > 10) {
+      return res.status(400).json({ error: 'Invalid level number (1-10 expected)' });
+    }
+
+    await query(`
+      UPDATE public.profiles
+      SET last_played_level = $1, last_login_at = NOW()
+      WHERE id = $2
+    `, [levelNumber, userId]);
+
+    return res.json({ success: true, lastPlayedLevel: levelNumber });
+  } catch (err) {
+    console.error('Error in /api/player/active-level:', err);
+    return res.status(500).json({ error: 'Failed to update active level' });
   }
 });
 

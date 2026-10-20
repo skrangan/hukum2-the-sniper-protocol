@@ -12,9 +12,15 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   preferred_subtitle_mode TEXT DEFAULT 'tanglish_with_english',
   total_aura_score BIGINT DEFAULT 0,
   highest_level_unlocked INT DEFAULT 1 CHECK (highest_level_unlocked BETWEEN 1 AND 10),
+  last_played_level INT DEFAULT 1,
+  password_hash TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   last_login_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Ensure columns exist if table already created
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_played_level INT DEFAULT 1;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS password_hash TEXT;
 
 -- Per-level user progress
 CREATE TABLE IF NOT EXISTS public.level_progress (
