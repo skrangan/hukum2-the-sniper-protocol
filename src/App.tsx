@@ -11,6 +11,7 @@ import { LevelSelectModal } from './components/LevelSelectModal';
 import { IntroVideoModal } from './components/IntroVideoModal';
 import { InventoryModal } from './components/InventoryModal';
 import { AudioSettingsModal } from './components/AudioSettingsModal';
+import { GoogleAuthModal } from './components/GoogleAuthModal';
 import { ThreeGameContainer } from './components/ThreeGameContainer';
 import { ThreeGameManager } from './game/three/ThreeGameManager';
 import { Game3DState } from './game/three/MarketScene3D';
@@ -58,6 +59,25 @@ export const App: React.FC = () => {
   const [showInventory, setShowInventory] = useState(false);
   const [showAudioSettings, setShowAudioSettings] = useState(false);
   const [showIntroVideo, setShowIntroVideo] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const handleLoginSuccess = (newProfile: UserProfile, newProgress?: LevelProgress[]) => {
+    setProfile(newProfile);
+    if (newProgress && newProgress.length > 0) {
+      setProgress(newProgress);
+    }
+  };
+
+  const handleSignOut = async () => {
+    ApiClient.clearToken();
+    try {
+      const guest = await ApiClient.guestLogin();
+      setProfile(guest.profile);
+      setProgress([]);
+    } catch (e) {
+      console.error('Failed to reset to guest:', e);
+    }
+  };
 
   const currentLevelConfig = LEVELS.find((l) => l.id === currentLevelId) || LEVELS[0];
 
@@ -244,6 +264,7 @@ export const App: React.FC = () => {
         onOpenIntroVideo={() => setShowIntroVideo(true)}
         onOpenInventory={() => setShowInventory(true)}
         onOpenAudioSettings={() => setShowAudioSettings(true)}
+        onOpenAuth={() => setShowAuthModal(true)}
         currentLevel={currentLevelId}
       />
 
@@ -308,6 +329,7 @@ export const App: React.FC = () => {
       <IntroVideoModal
         isOpen={showIntroVideo}
         onClose={() => setShowIntroVideo(false)}
+        onOpenAuth={() => setShowAuthModal(true)}
         onStartGame={() => {
           soundManager.startCinematicBgm('stealth');
           setShowIntroVideo(false);
@@ -340,6 +362,8 @@ export const App: React.FC = () => {
           onNextLevel={handleNextLevel}
           onRetry={handleRetry}
           dbSaved={dbSaved}
+          isGoogleUser={Boolean(profile && profile.id && (profile.id.startsWith('g_') || (!profile.id.startsWith('guest_') && profile.email && !profile.email.includes('@hukum2.local'))))}
+          onOpenAuth={() => setShowAuthModal(true)}
         />
       )}
 
@@ -354,6 +378,15 @@ export const App: React.FC = () => {
         onSelectLevel={handleSelectChapter}
         highestUnlocked={profile?.highest_level_unlocked || 1}
         progressList={progress}
+      />
+
+      {/* Google OAuth Login & Dossier Authentication Modal */}
+      <GoogleAuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        profile={profile}
+        onLoginSuccess={handleLoginSuccess}
+        onSignOut={handleSignOut}
       />
     </div>
   );

@@ -9,6 +9,8 @@ interface VictoryModalProps {
   onNextLevel: () => void;
   onRetry: () => void;
   dbSaved: boolean;
+  isGoogleUser?: boolean;
+  onOpenAuth?: () => void;
 }
 
 export const VictoryModal: React.FC<VictoryModalProps> = ({
@@ -17,7 +19,9 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
   clearTimeMs,
   onNextLevel,
   onRetry,
-  dbSaved
+  dbSaved,
+  isGoogleUser,
+  onOpenAuth
 }) => {
   const seconds = (clearTimeMs / 1000).toFixed(1);
 
@@ -81,9 +85,22 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
         </div>
 
         {/* Render PostgreSQL Status */}
-        <div className="flex items-center justify-center space-x-1.5 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-500/20 py-1.5 px-3 rounded-xl mb-6">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{dbSaved ? 'Synced with Render PostgreSQL Database' : 'Syncing Dossier...'}</span>
+        <div className="flex flex-col items-center justify-center mb-6 space-y-1">
+          <div className="flex items-center space-x-1.5 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-500/20 py-1.5 px-3 rounded-xl">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>{dbSaved ? 'Synced with Render PostgreSQL Database' : 'Syncing Dossier...'}</span>
+          </div>
+          {!isGoogleUser && onOpenAuth && (
+            <button
+              onClick={() => {
+                soundManager.playUiClick();
+                onOpenAuth();
+              }}
+              className="text-[11px] text-amber-400 hover:text-amber-300 underline font-bold transition flex items-center space-x-1 pt-1"
+            >
+              <span>Link Google Account to save Aura permanently</span>
+            </button>
+          )}
         </div>
 
         {/* Action Buttons */}
